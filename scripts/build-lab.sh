@@ -99,6 +99,9 @@ start_vm() {
 	IFACE=$(tunctl -b)
 	TAPS="$TAPS $IFACE"
 	generate_mac "$name-$net-$IFACE"
+	if [ "$name" == "r2" ]; then
+		mac="00:01:cc:dd:ee:ff"
+	fi
 	netargs="$netargs -netdev type=tap,id=guest1,ifname=$IFACE -device virtio-net-pci,netdev=guest1,mac=$mac"
 	ip link set up dev "$IFACE"
 
@@ -249,10 +252,13 @@ EOF
 
 	if [ $uts == "r1" ]; then
 		echo 1 > /proc/sys/net/ipv6/conf/eth0/disable_ipv6
+		echo 1 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6
 	fi
 
 	modprobe slip
 	mount -o bind /tmp/home/etc/ /etc
+
+	mount -t debugfs none /sys/kernel/debug
 
 	# Second VM is the tested one
 	if [ $uts == "r2" ]; then
@@ -291,7 +297,7 @@ EOF
 		sleep 1
 		ifconfig sl0 192.168.2.1 pointopoint 192.168.2.2 up
 		#ip addr add 192.168.34.2/24 dev eth1
-		ip l s down dev eth1
+		#ip l s down dev eth1
                 ;;
             r2)
                 ip addr add 192.168.33.3/24 dev eth0
@@ -299,7 +305,13 @@ EOF
 		slattach -p slip -s 9600 /dev/ttyS1 &
 		sleep 1
 		ifconfig sl0 192.168.2.2 pointopoint 192.168.2.1 up
-		ip l s down dev eth1
+		#ip l s down dev eth1
+
+		# Comment these 3 lines if only testing r2 as a host.
+		# This configuration is used for r2 as router.
+		ip -6 a a 3ffe:501:ffff:100:0200:ccff:fedd:eeff/64 dev eth0
+		ip -6 a a 3ffe:501:ffff:101:0201:ccff:fedd:eeff/64 dev eth1
+		echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
                 ;;
         esac
 
