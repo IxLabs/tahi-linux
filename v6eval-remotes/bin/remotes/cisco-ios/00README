@@ -1,0 +1,89 @@
+				README
+
+			      TAHI Project
+
+			$Date: 2002/07/10 05:11:04 $
+
+Here is sample configration for the test.
+
+=============================================================================
+Current configuration:
+!
+version 12.1
+service timestamps debug uptime
+service timestamps log uptime
+no service password-encryption
+!
+hostname c4500
+!
+enable password v6eval		<=== THIS
+!
+!
+!
+!
+!
+ip subnet-zero
+!
+ipv6 unicast-routing		<=== THIS
+!
+!
+interface Ethernet0
+ ip address 10.1.8.41 255.255.0.0
+ media-type 10BaseT
+!         
+interface Ethernet1
+ no ip address
+ no keepalive					<=== THIS
+ media-type 10BaseT
+ ipv6 enable					<=== THIS
+ ipv6 address 3FFE:501:FFFF:100::/64 eui-64	<=== THIS
+ ipv6 nd reachable-time 30000			<=== THIS
+ ipv6 nd suppress-ra				<=== THIS
+ no cdp enable					<=== THIS
+!         
+interface Ethernet2
+ no ip address
+ no keepalive					<=== THIS
+ media-type 10BaseT
+ ipv6 enable					<=== THIS
+ ipv6 address 3FFE:501:FFFF:101::/64 eui-64	<=== THIS
+ ipv6 nd reachable-time 30000			<=== THIS
+ ipv6 nd suppress-ra				<=== THIS
+ no cdp enable					<=== THIS
+!         
+interface Ethernet3
+ no ip address
+ shutdown 
+ media-type 10BaseT
+!         
+interface Ethernet4
+ no ip address
+ shutdown 
+ media-type 10BaseT
+!         
+interface Ethernet5
+ no ip address
+ shutdown 
+ media-type 10BaseT
+!         
+ip classless
+no ip http server
+!         
+!         
+!         
+!         
+!         
+line con 0
+ password v6eval		<=== THIS
+ login				<=== THIS
+ no editing			<=== THIS
+ transport input none
+line aux 0
+line vty 0 4
+ password v6eval
+ login    
+!         
+end       
+=============================================================================
+
+							[end of README]

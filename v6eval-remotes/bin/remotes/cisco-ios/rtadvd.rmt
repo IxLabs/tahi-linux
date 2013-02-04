@@ -1,0 +1,223 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/cisco-ios/rtadvd.rmt,v 1.6 2003/01/27 05:55:20 akisada Exp $
+#
+########################################################################
+use V6evalRemote;
+
+rOpen() || goto error;
+
+$type=rType();
+
+#
+if($rOpt_Start && !defined($rOpt_link0) && !defined($rOpt_link1)) {
+    print STDERR "Specify link0=XXX and/or link1=XXX\n";
+    goto error;
+}
+
+#
+$rOpt_timeout=5
+    if ! defined($rOpt_timeout);
+#
+$rOpt_maxinterval=600
+    if ! defined($rOpt_maxinterval);
+$rOpt_mininterval=$rOpt_maxinterval*0.33
+    if ! defined($rOpt_mininterval);
+
+#
+$rOpt_chlim=64
+    if ! defined($rOpt_chlim);
+$rOpt_raflag=0
+    if ! defined($rOpt_raflag);
+$rOpt_rltime=$rOpt_maxinterval*3
+    if ! defined($rOpt_rltime);
+#$rOpt_rtime=0
+$rOpt_rtime=30000
+    if ! defined($rOpt_rtime) || $rOpt_rtime==0;
+#$rOpt_retrans=0
+$rOpt_retrans=1000
+    if ! defined($rOpt_retrans) || $rOpt_retrans==0;
+#
+$rOpt_pinfoflags=192
+    if ! defined($rOpt_pinfoflags);
+$rOpt_vltime=2592000
+    if ! defined($rOpt_vltime);
+$rOpt_pltime=604800
+    if ! defined($rOpt_pltime);
+#
+$rOpt_mtu=1500
+    if ! defined($rOpt_mtu);
+
+#
+$rtadv_tmpl="$type".".rtadvd.tmpl";
+$rtadv_conf="$type".".rtadvd.conf";
+$rtadv_rmt="/tmp/rtadvd.conf";
+$put_timeout=180;
+
+#
+rLogin($rOpt_timeout) || goto error;
+rtadvd() || goto error;
+rLogout($rOpt_timeout) || goto error;
+
+rClose();
+exit($V6evalRemote::exitPass);
+
+error:
+    rClose();
+    exit($V6evalRemote::exitFail);
+
+########################################################################
+sub rtadvd()
+{
+    if($rOpt_start) {
+	mkconf() || goto error;
+	kill_rtadvd() || goto error;
+	start_rtadvd() || goto error;
+    } elsif($rOpt_stop) {
+	kill_rtadvd() || goto error;
+    } else {
+	print "Nothing happed. Please specify start/stop.\n";
+    }
+    return(1);
+
+error:
+    return(0);
+}
+
+#
+sub mkconf()
+{
+    print "Make rtadvd.conf\n" if $V6evalRemote::debug;
+    if(open(IN, "$rtadv_tmpl") == 0) {
+	print STDERR "$rtadv_tmpl: $!\n";
+	goto error;
+    }
+    if(open(OUT, "> $rtadv_conf") == 0) {
+	print STDERR "$rtadv_conf: $!\n";
+	goto error;
+    }
+    my($interval)=($rOpt_maxinterval + $rOpt_mininterval)/2;
+    $interval=int($interval + 0.5);
+    while(<IN>) {
+	s/LINK0/$rOpt_link0/;
+	s/LINK1/$rOpt_link1/;
+	#
+	if(0) {
+	    s/MAXINTERVAL/$rOpt_maxinterval/;
+	    s/MININTERVAL/$rOpt_mininterval/;
+	}
+	s/INTERVAL/$interval/;
+	s/CHLIM/$rOpt_chlim/;
+	s/RAFLAGS/$rOpt_raflags/;
+	s/RLTIME/$rOpt_rltime/;
+	s/RTIME/$rOpt_rtime/;
+	s/RETRANS/$rOpt_retrans/;
+	#
+	s/PINFOFLAGS/$rOpt_pinfoflags/;
+	s/VLTIME/$rOpt_vltime/;
+	s/PLTIME/$rOpt_pltime/;
+	#
+	s/MTU/$rOpt_mtu/;
+	#
+	print STDERR $_ if $V6evalRemote::debug;
+	print OUT $_;
+    }
+    close(IN);
+    close(OUT);
+
+    print "Put local:$rtadv_conf to remote:$rtadv_rmt\n"
+	if $V6evalRemote::debug;
+    return(1);
+
+error:
+    return(0);
+}
+
+#
+sub kill_rtadvd
+{
+    rCommand("configure terminal", $timeout) || goto error;
+    foreach(($rOpt_link0, $rOpt_link1)) {
+	next if $_ eq "";
+	rCommand("interface $_", $timeout) || goto error;
+	rCommand("ipv6 nd suppress-ra", $timeout) || goto error;
+	rCommand("exit", $timeout) || goto error;
+    }
+    rCommand("exit", $timeout) || goto error;
+
+    return(1);
+
+error:
+    return(0);
+}
+
+#
+sub start_rtadvd()
+{
+    if(open(IN, "$rtadv_conf") == 0) {
+	print STDERR "$rtadv_tmpl: $!\n";
+	goto error;
+    }
+    my($suppress)=0;
+    while(<IN>) {
+	next if /^\s*$/;
+	next if /^#/;
+	chomp;
+	if(/interface/) {
+	    $suppress=($' =~ /^\s+$/);
+	}
+	if(!$suppress) {
+	    rCommand("$_", $timeout) || goto error;
+	}
+	if($suppress && $_=~/exit/) {
+	    $suppress=0;
+	}
+    }
+    close(IN);
+    return(1);
+
+error:
+    return(0);
+}
+
+########################################################################

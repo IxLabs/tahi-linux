@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+
+# example:
+# reboot_async.rmt [-options...] [timeout=5]
+
+use V6evalRemote;
+
+print "Open remote\n";
+rOpen() || die;
+$type=rType();
+rLogStdout(1);
+
+$rOpt_timeout=5 if $rOpt_timeout == undef;
+
+if($type eq "kame-freebsd") {
+	print "Login\n";
+	rLogin($rOpt_timeout) || die;
+	print "Reboot & exit immediately\n";
+	rRebootAsync($rOpt_timeout) || die;
+} else {
+	print "$type: Unknown target type\n";
+}
+
+print "Close remote\n";
+rClose() || die;

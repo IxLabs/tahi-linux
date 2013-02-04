@@ -1,0 +1,671 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/kame-freebsd/ikeSetSA.rmt,v 1.6 2005/05/20 02:08:24 ozoe Exp $
+#
+########################################################################
+use V6evalRemote;
+
+rOpen() || goto error;
+$type=rType();
+
+# set default values
+
+$rOpt_timeout=10 if ! defined($rOpt_timeout);
+$rOpt_nodump=on	 if ! defined($rOpt_nodump);
+$put_timeout=180;
+
+########################################################################
+# define default IKE variable parameters
+########################################################################
+$prefix		= "/usr/local/v6";
+
+$ike_pidfile	= "/var/run/racoon.pid";
+if ($rOpt_remote_debug eq undef){
+	$ike_cmd	= "/usr/local/v6/sbin/racoon";
+}
+else{
+	$ike_cmd	= "/usr/local/v6/sbin/racoon -dvvvvv -l /var/log/racoon.log";
+}
+$setkey_cmd	= "${prefix}/sbin/setkey";
+
+$ike_conf="$type".".ike.conf";
+$ike_rmt="/tmp/ike.conf";
+
+$rOpt_pre_shared_key_path	= "/tmp/psk.txt" if ! defined($rOpt_pre_shared_key_file);
+$rOpt_certificate_path		= "/tmp/cert" if ! defined($rOpt_certificate_path);
+
+$pre_shared_key_file	= "$type".".psk.txt";
+$pre_shared_key_rmt	= $rOpt_pre_shared_key_path;
+
+$rOpt_certificate_file	= "cert.pem" if ! defined($rOpt_certificate_file);
+$certificate_file	= $rOpt_certificate_file;
+$certificate_rmt	= "$rOpt_certificate_path/". "$certificate_file";
+
+$rOpt_privkey_file	= "privkey.pem" if ! defined($rOpt_privkey_file);
+$privkeyfile_file	= $rOpt_privkey_file;
+$privkeyfile_rmt	= "$rOpt_certificate_path/". "$privkeyfile_file";
+
+$rOpt_padding_maximum_length	= 20  if ! defined($rOpt_padding_maximum_length);
+$rOpt_padding_randomize		= off if ! defined($rOpt_padding_randomize);
+$rOpt_padding_strict_check	= off if ! defined($rOpt_padding_strict_check);
+$rOpt_padding_exclusive_tail	= off if ! defined($rOpt_padding_exclusive_tail);
+
+$rOpt_compression_algorithm	= deflate if ! defined($rOpt_compression_algorithm);
+
+###############################################
+# check IKE parameters
+###############################################
+if ($rOpt_auth_method eq "pre_shared_key"){
+	if ($rOpt_key_value eq undef){
+		print STDERR "key value is required\n";
+		usage();
+		goto error;
+	}
+}
+
+if ($rOpt_exchange_mode eq undef){
+	print STDERR "exchange mode is required\n";
+	usage();
+	goto error;
+}
+
+if ($rOpt_isakmp_src_id_type eq undef){
+	print STDERR "ID is required\n";
+	usage();
+	goto error;
+}
+
+if (defined($rOpt_nonce_size)) {
+	if($rOpt_nonce_size < 8 || $rOpt_nonce_size > 256){
+		print STDERR "nonce value size MUST be between 8 and 256\n";
+		usage();
+		goto error;
+	}
+}
+
+if ($rOpt_encryption_algorithm eq undef){
+	print STDERR "Phase-1 encryption algorithm is required\n";
+	usage();
+	goto error;
+}
+
+if ($rOpt_hash_algorithm eq undef){
+	print STDERR "Phase-1 hash algorithm is required\n";
+	usage();
+	goto error;
+}
+
+if ($rOpt_authentication_method eq undef){
+	print STDERR "Phase-1 authentication method is required\n";
+	usage();
+	goto error;
+}
+
+if ($rOpt_dh_group eq undef){
+	print STDERR "Phase-1 DH group is required\n";
+	usage();
+	goto error;
+}
+
+if (defined($rOpt_encryption_algorithm_2)){
+	if($rOpt_hash_algorithm_2 eq undef){
+		print STDERR "Phase-1 2nd hash algorithm is required\n";
+		usage();
+		goto error;
+	}
+	if($rOpt_authentication_method_2 eq undef){
+		print STDERR "Phase-1 2nd authentication method is required\n";
+		usage();
+		goto error;
+	}
+	if($rOpt_dh_group_2 eq undef){
+		print STDERR "Phase-1 2nd DH group is required\n";
+		usage();
+		goto error;
+	}
+}
+
+if (defined($rOpt_certificate_type)){
+	if($rOpt_certificate_file eq undef || $rOpt_privkey_file eq undef){
+		print STDERR "Certificate, private key file is required\n";
+		usage();
+		goto error;
+	}
+}
+
+if (defined($rOpt_ph2_id_type)){
+	if($rOpt_ph2_id_type eq "address" || $rOpt_ph2_id_type ne "anonymous"){
+		if($rOpt_ph2_src_id eq undef || $rOpt_ph2_dst_id eq undef){
+			print STDERR "Phase-2 src, dst id is required\n";
+			usage();
+			goto error;
+		}
+	}
+}
+
+for (my $i = 1; $i <= $rOpt_ipsec_p_num; $i++){
+	my $num = eval '$rOpt_ipsec_p'."$i".'_t_num';
+	my $ipsec_p_t_num = $num;
+
+	my $ph2_lt = undef;
+	my $ph2_lt_unit = undef;
+	my $ph2_enc_alg = undef;
+	my $ph2_auth_alg= undef;
+	my $ph2_auth_mtd = undef;
+
+	for (my $j = 1; $j <= $ipsec_p_t_num; $j++){
+
+		$ph2_lt_value = eval '$rOpt_ph2_p'. "$i"."_t$j".'_lt';
+		$ph2_lt_unit = eval '$rOpt_ph2_p'. "$i"."_t$j".'_lt_unit';
+		$ph2_enc_alg = eval '$rOpt_ph2_p'. "$i"."_t$j".'_enc_alg';
+		$ph2_auth_alg= eval '$rOpt_ph2_p'. "$i"."_t$j".'_auth_alg';
+		$ph2_auth_mtd = eval '$rOpt_ph2_p'. "$i"."_t$j".'_auth_mtd';
+
+		if($ph2_enc_alg eq 'ESP_DES'){
+			$ph2_enc_alg = 'des';
+		}
+		elsif($ph2_enc_alg eq 'ESP_3DES'){
+			$ph2_enc_alg = '3des';
+		}
+		elsif($ph2_enc_alg eq 'ESP_AES_CBC'){
+			$ph2_enc_alg = 'rijndael';
+		}
+		elsif($ph2_enc_alg eq 'ESP_NULL'){
+			$ph2_enc_alg = 'null_enc';
+		}
+		elsif(defined($ph2_enc_alg)){
+			goto notsupported;
+		}
+
+		if($ph2_auth_alg eq 'AH_MD5'){
+			$ph2_auth_alg = 'hmac_md5';
+		}
+		elsif($ph2_auth_alg eq 'AH_SHA'){
+			$ph2_auth_alg = 'hmac_sha1';
+		}
+		elsif($ph2_auth_alg eq 'AH_SHA2_256'){
+			$ph2_auth_alg = 'hmac_sha2_256';
+		}
+		elsif(defined($ph2_auth_alg)){
+			goto notsupported;
+		}
+
+		if($ph2_auth_mtd eq 'HMAC_MD5'){
+			$ph2_auth_mtd = 'hmac_md5';
+		}
+		elsif($ph2_auth_mtd eq 'HMAC_SHA'){
+			$ph2_auth_mtd = 'hmac_sha1';
+		}
+		elsif($ph2_auth_mtd eq 'HMAC_SHA2_256'){
+			$ph2_auth_mtd = 'hmac_sha2_256';
+		}
+		elsif(defined($ph2_auth_mtd)){
+			goto notsupported;
+		}
+
+		$lt_value[$i][$j]  = $ph2_lt_value;
+		$lt_unit[$i][$j] = $ph2_lt_unit;
+		$enc_alg[$i][$j]  = $ph2_enc_alg;
+		$auth_alg[$i][$j] = $ph2_auth_alg;
+		$auth_mtd[$i][$j] = $ph2_auth_mtd;
+
+		if(($enc_alg[$i][$j] eq undef) && ($auth_alg[$i][$j] eq undef)){
+			print STDERR "Phase-2 encryption or authentication algorithm is required\n";
+			usage();
+			goto error;
+		}
+#		if($auth_mtd[$i][$j] eq undef){
+#			print STDERR "Phase-2 authentication method is required\n";
+#			usage();
+#			goto error;
+#		}
+		print STDERR "Lifetime: $ph2_lt_value\n" if defined($rOpt_remote_debug);
+		print STDERR "Lifetime unit: $ph2_lt_unit\n" if defined($rOpt_remote_debug);
+		print STDERR "Encryption Algo: $ph2_enc_alg\n" if defined($rOpt_remote_debug);
+		print STDERR "Authentication Algo: $ph2_auth_alg\n" if defined($rOpt_remote_debug);
+		print STDERR "Authentication Method: $ph2_auth_mtd\n" if defined($rOpt_remote_debug);
+	}
+}
+
+###############################################
+# start main routine
+###############################################
+
+rLogin($rOpt_timeout) || goto error;
+mk_psk() || goto error;
+mk_certificate() || goto error;
+mkconf_ike() || goto error;
+stop_ike() || goto error;
+start_ike() || goto error;
+rLogout($rOpt_timeout) || goto error;
+
+rClose();
+exit($V6evalRemote::exitPass);
+
+error:
+	rClose();
+	exit($V6evalRemote::exitFail);
+
+notsupported:
+	rClose();
+	exit($V6evalRemote::exitNS);
+
+########################################################################
+# sub routine
+########################################################################
+# setup Phase-I parameters
+########################################################################
+sub set_ph1_param()
+{
+
+	$rOpt_dst	= "anonymous" if ! defined($rOpt_dst);
+	my $port	= "[$rOpt_dst_port]" if defined($rOpt_dst_port);
+	my $multi_transform = 0;  
+	$multi = 1 if defined($rOpt_encryption_algorithm_2);
+
+	print OUT "path pre_shared_key \"$rOpt_pre_shared_key_path\";\n" if ($rOpt_authentication_method eq "pre_shared_key");
+	print OUT "path certificate \"$rOpt_certificate_path\";\n" if defined($rOpt_certificate_type);
+
+	print OUT "remote $rOpt_dst $port\{\n";
+	print OUT "\texchange_mode $rOpt_exchange_mode;\n";
+	print OUT "\tdoi $rOpt_doi;\n" if defined($rOpt_doi);
+	print OUT "\tsituation $rOpt_situation;\n" if defined($rOpt_situation);
+	if (defined($rOpt_certificate_file)){
+		print OUT "\tmy_identifier $rOpt_isakmp_src_id_type";
+		print OUT " \"$rOpt_isakmp_src_id\"" if defined($rOpt_isakmp_src_id); 
+		print OUT ";\n";
+	}
+	else
+	{
+		print OUT "\tmy_identifier $rOpt_isakmp_src_id_type \"$rOpt_isakmp_src_id\";\n";
+	}
+	print OUT "\tpeers_identifier $rOpt_peers_id_type $rOpt_peers_id;\n" if defined($rOpt_peers_id_type);
+	print OUT "\tverify_identifier $rOpt_verify_identifier;\n" if defined($rOpt_verify_identifier);
+	print OUT "\tcertificate_type $rOpt_certificate_type \"$rOpt_certificate_file\" \"$rOpt_privkey_file\";\n"
+				if defined($rOpt_certificate_type);
+	print OUT "\tpeers_certfile $rOpt_peers_certfile;\n" if defined($rOpt_peers_certfile);
+	print OUT "\tsend_cert $rOpt_send_cert;\n" if defined($rOpt_send_cert);
+	print OUT "\tsend_cr $rOpt_send_cr;\n" if defined($rOpt_send_cr);
+	print OUT "\tverify_cert $rOpt_verify_cert;\n" if defined($rOpt_verify_cert);
+	print OUT "\tnonce_size $rOpt_nonce_size;\n" if defined($rOpt_nonce_size);
+	print OUT "\tproposal{\n";
+	print OUT "\t\tencryption_algorithm $rOpt_encryption_algorithm;\n";
+	print OUT "\t\thash_algorithm $rOpt_hash_algorithm;\n";
+	print OUT "\t\tauthentication_method $rOpt_authentication_method;\n";
+	print OUT "\t\tdh_group $rOpt_dh_group;\n";
+	print OUT "\t\tlifetime time $rOpt_lifetime $rOpt_lifetime_unit;\n" if defined($rOpt_lifetime);
+	print OUT "\t}\n";
+	if($multi){
+		print OUT "\tproposal{\n";
+		print OUT "\t\tencryption_algorithm $rOpt_encryption_algorithm_2;\n";
+		print OUT "\t\thash_algorithm $rOpt_hash_algorithm_2;\n";
+		print OUT "\t\tauthentication_method $rOpt_authentication_method_2;\n";
+		print OUT "\t\tdh_group $rOpt_dh_group_2;\n";
+		print OUT "\t\tlifetime time $rOpt_lifetime_2 $rOpt_lifetime_unit_2;\n" if defined($rOpt_lifetime_2);
+		print OUT "\t}\n";
+	}
+	print OUT "}\n";
+
+	sleep(1);
+
+	return(1);
+
+error:
+	return(0);
+}
+
+
+########################################################################
+# setup Phase-II parameters
+########################################################################
+sub set_ph2_param()
+{
+
+	if (!defined($rOpt_ph2_id_type)){
+		$sainfo = "anonymous"; 
+	}
+	else{
+		if($rOpt_ph2_src_upper eq "ipv6-icmp"){
+			$rOpt_ph2_src_upper = 'icmp6';
+		}
+		if($rOpt_ph2_dst_upper eq "ipv6-icmp"){
+			$rOpt_ph2_dst_upper = 'icmp6';
+		}
+		if($rOpt_ph2_id_type eq "address"){
+			$rOpt_ph2_src_upper = "any" if ! defined($rOpt_ph2_src_upper);
+			$rOpt_ph2_dst_upper = "any" if ! defined($rOpt_ph2_dst_upper);
+			$sainfo = "$rOpt_ph2_id_type $rOpt_ph2_src_id $rOpt_ph2_src_port $rOpt_ph2_src_upper";
+			$sainfo .= " $rOpt_ph2_id_type $rOpt_ph2_dst_id $rOpt_ph2_dst_port $rOpt_ph2_dst_upper";
+		}
+		elsif($rOpt_ph2_id_type eq "anonymous"){
+			$sainfo = "anonymous"; 
+		}
+		else{
+			$sainfo = "$rOpt_ph2_id_type $rOpt_ph2_src_id";
+			$sainfo .= " $rOpt_ph2_id_type $rOpt_ph2_dst_id";
+		}
+	}
+
+	my $lifetime = 0;
+	my $time_unit = undef;
+	my $enc_alg_list = undef;
+	my $auth_alg_list = undef;
+	for (my $i = 1; $i <= $rOpt_ipsec_p_num; $i++){
+		my $num = eval '$rOpt_ipsec_p'."$i".'_t_num';
+		my $ipsec_p_t_num = $num;
+		for (my $j = 1; $j <= $ipsec_p_t_num; $j++){
+
+			if ($lt_value[$i][$j] && $lifetime == 0){
+				$lifetime = $lt_value[$i][$j];
+				$time_unit = $lt_unit[$i][$j];
+			}
+
+			if (defined($enc_alg_list)){
+				if(defined($enc_alg[$i][$j]) && !($enc_alg_list =~ m/\b$enc_alg[$i][$j]\b/i)){
+					$enc_alg_list .= ", " . $enc_alg[$i][$j];
+				}
+			}
+			else{
+				if(defined($enc_alg[$i][$j])){
+					$enc_alg_list = $enc_alg[$i][$j];
+				}
+			}
+
+			if (defined($auth_alg_list)){
+				if(defined($auth_alg[$i][$j]) && !($auth_alg_list =~ m/\b$auth_alg[$i][$j]\b/i)){
+					$auth_alg_list .= ", " . $auth_alg[$i][$j];
+				}
+				if(!($auth_alg_list =~ m/\b$auth_mtd[$i][$j]\b/i)){
+					$auth_alg_list .= ", " . $auth_mtd[$i][$j];
+				}
+			}
+			else{
+				if(defined($auth_alg[$i][$j])){
+					$auth_alg_list = $auth_alg[$i][$j];
+				}
+				else{
+					$auth_alg_list = $auth_mtd[$i][$j];
+				}
+			}
+		}
+	}
+	print STDERR "lifetime: $lifetime, unit: $time_unit\n" if defined($rOpt_remote_debug);
+	print STDERR "encryption_algorithm: $enc_alg_list\n" if defined($rOpt_remote_debug);
+	print STDERR "authentication_algorithm: $auth_alg_list\n" if defined($rOpt_remote_debug);
+	print STDERR "compression_algorithm: $rOpt_compression_algorithm\n" if defined($rOpt_remote_debug);
+
+	print OUT "sainfo $sainfo\{\n";
+	print OUT "	pfs_group $rOpt_pfs_group;\n" if defined($rOpt_pfs_group);
+	print OUT "	lifetime time $lifetime $time_unit;\n" if ($lifetime != 0);
+	if (defined($enc_alg_list)){
+		print OUT "	encryption_algorithm $enc_alg_list;\n";
+	}
+	else{
+		print OUT "	encryption_algorithm 3des;\n"; #This parametor is required for racoon configuration.
+	}
+	if (defined($auth_alg_list)){
+		print OUT "	authentication_algorithm $auth_alg_list;\n";
+	}
+	else{
+		print OUT "	authentication_algorithm non_auth;\n"; #This parametor is required for racoon configuration.
+	}
+	print OUT "	compression_algorithm $rOpt_compression_algorithm;\n";
+	print OUT "}\n";
+
+	sleep(1);
+
+	return(1);
+
+error:
+	return(0);
+}
+
+###############################################
+# create pre-shared key file
+###############################################
+sub mk_psk()
+{
+
+	if ($rOpt_authentication_method ne "pre_shared_key"){
+		return(1);
+	}
+
+	print "Make psk.txt\n" if defined($rOpt_remote_debug);
+	if(open(OUT, "> $pre_shared_key_file") == 0) {
+		print STDERR "$pre_shared_key_file: $!\n";
+		goto error;
+	}
+
+	print OUT "$rOpt_key_id $rOpt_key_value\n";
+
+	close(OUT);
+
+	print "Put local:$pre_shared_key_file to remote:$pre_shared_key_rmt\n"
+		if defined($rOpt_remote_debug);
+	rPutfile($pre_shared_key_file, $pre_shared_key_rmt, $put_timeout) || goto error;
+	my $chmd_cmd = "/bin/chmod";
+	rCommand("$chmd_cmd 600 $pre_shared_key_rmt", $timeout) || return(0);
+	return(1);
+
+error:
+	return(0);
+}
+
+###############################################
+# create certificate dir and copy file
+###############################################
+sub mk_certificate()
+{
+
+	if (!defined($rOpt_certificate_type)){
+		return(1);
+	}
+
+	my $chmd_cmd = "/bin/chmod";
+
+	###############################################
+	# create certificate dir
+	###############################################
+	my $mkdir_cmd = "/bin/mkdir";
+	rCommand("$mkdir_cmd -p $rOpt_certificate_path", $timeout) || return(0);
+	rCommand("$chmd_cmd 700 $rOpt_certificate_path", $timeout) || return(0);
+
+	###############################################
+	# copy certificate file
+	###############################################
+	print "Copy $certificate_file\n" if defined($rOpt_remote_debug);
+
+	print "Put local:$certificate_file to remote:$certificate_rmt\n"
+		if defined($rOpt_remote_debug);
+	rPutfile($certificate_file, $certificate_rmt, $put_timeout) || goto error;
+	rCommand("$chmd_cmd 600 $certificate_rmt", $timeout) || return(0);
+
+	###############################################
+	# copy private key file
+	###############################################
+	print "Copy $privkeyfile_file\n" if defined($rOpt_remote_debug);
+
+	print "Put local:$privkeyfile_file to remote:$privkeyfile_rmt\n"
+		if defined($rOpt_remote_debug);
+	rPutfile($privkeyfile_file, $privkeyfile_rmt, $put_timeout) || goto error;
+	rCommand("$chmd_cmd 600 $privkeyfile_rmt", $timeout) || return(0);
+
+	return(1);
+
+error:
+	return(0);
+}
+
+###############################################
+# create IKE configuration file
+###############################################
+sub mkconf_ike()
+{
+	print "Make ike.conf\n" if defined($rOpt_remote_debug);
+
+	if(open(OUT, "> $ike_conf") == 0) {
+		print STDERR "$ike_conf: $!\n";
+		goto error;
+	}
+
+	set_ph1_param() || goto error;
+	set_ph2_param() || goto error;
+
+	close(OUT);
+
+	print "Put local:$ike_conf to remote:$ike_rmt\n"
+		if defined($rOpt_remote_debug);
+	rPutfile($ike_conf, $ike_rmt, $put_timeout) || goto error;
+	return(1);
+
+error:
+	return(0);
+}
+
+########################################################################
+# stop IKE
+########################################################################
+sub stop_ike()
+{
+	print "Stop IKE\n" if defined($rOpt_remote_debug);
+
+	$kill_cmd  = "test -f $ike_pidfile &&";
+	$kill_cmd .= "kill -TERM `head -1 $ike_pidfile`\r"; 
+
+	rCommand("$kill_cmd", $timeout) || return(0);
+
+	return(1);
+}
+
+########################################################################
+# start IKE
+########################################################################
+sub start_ike()
+{
+	print "Start IKE\n" if defined($rOpt_remote_debug);
+
+	rCommand("$ike_cmd -f $ike_rmt\r", $timeout) || return(0);
+
+	unless(defined($rOpt_nodump)) {
+		rCommand("$setkey_cmd -D\r", $timeout) || return(0);
+	}
+
+	return(1);
+}
+
+########################################################################
+sub usage()
+{
+	print STDERR "ikeSetSA.rmt [parameters]\n";
+	print STDERR "parameters:\n";
+	print STDERR "\n";
+	print STDERR "dst=destination_address\n";
+	print STDERR "dst_port=destination_port\n";
+	print STDERR "exchange_mode=main|aggressive|base\n";
+	print STDERR "doi=ipsec_doi\n";
+	print STDERR "situation=identity_only\n";
+	print STDERR "isakmp_src_id_type=address|fqdn|user_fqdn|keyid|asn1dn\n";
+	print STDERR "isakmp_src_id=address|string|file\n";
+	print STDERR "peers_identifier=peers_identifier\n";
+	print STDERR "verify_identifier=on|off\n";
+	print STDERR "certificate_type=x509\n";
+	print STDERR "certificate_file=certfile_name\n";
+	print STDERR "privkey_file=privkeyfile_name\n";
+	print STDERR "peers_certfile=certfile\n";
+	print STDERR "send_cert=on|off\n";
+	print STDERR "send_cr=on|off\n";
+	print STDERR "verify_cert=on|off\n";
+	print STDERR "nonce_size=number\n";
+	print STDERR "encryption_algorithm=des|3des|aes-cbc\n";
+	print STDERR "hash_algorithm=md5|sha1\n";
+	print STDERR "authentication_method=pre_shared_key|rsasig\n";
+	print STDERR "dh_group=1|2\n";
+	print STDERR "lifetime=number\n";
+	print STDERR "lifetime_unit=timeunit\n";
+	print STDERR "\n";
+	print STDERR "ph2_id_type=source_id|address|annonymous\n";
+	print STDERR "ph2_src_id=source_id\n";
+	print STDERR "ph2_dst_id=peers_id\n";
+	print STDERR "ph2_src_port=source_port\n";
+	print STDERR "ph2_dst_port=peers_port\n";
+	print STDERR "ph2_src_upper=any|tcp|udp|ipv6-icmp|icmp6|src_proto_number\n";
+	print STDERR "ph2_dst_upper=any|tcp|udp|ipv6-icmp|icmp6|dst_proto_number\n";
+	print STDERR "pfs_group=off|1|2\n";
+	print STDERR "ph2_p_num=number_of_proposal\n";
+	print STDERR "ph2_pX_t_num=number_of_transform\n";
+	print STDERR "ph2_pX_tX_lt=number\n";
+	print STDERR "ph2_pX_tX_lt_unit=timeunit\n";
+	print STDERR "ph2_pX_tX_enc_alg=encryption_algorithm\n";
+	print STDERR "ph2_pX_tX_auth_alg=authentication_algorithm\n";
+	print STDERR "ph2_pX_tX_auth_mtd=authentication_method\n";
+	print STDERR "compression_algorithm=compression_algorithm\n";
+}
+
+########################################################################
+__END__
+
+=head1 NAME
+
+B<ikeSetSA.rmt> - set IKE configuration and start IKE negotiation
+
+=head1 SYNOPSIS
+
+B<ikeSetSA.rmt> [-commonoption ...] [options]
+
+=head1 DESCRIPTION
+
+*[options]
+	TBD
+
+=head1 RETURN VALUES
+
+The B<ikeSetSA.rmt> exits with one of the following values:
+ 0  command completed successfully
+ 1  command failed
+
+=head1 SEE ALSO
+
+perldoc V6evalRemote
+
+=cut
+

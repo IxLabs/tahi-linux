@@ -1,0 +1,275 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 2005 USAGI/WIDE Project
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $USAGI: racontrol.rmt,v 1.15 2005/01/17 13:14:28 yoshfuji Exp $
+# Based on:
+# TAHI: v6eval/bin/remotes/kame-freebsd/racontrol.rmt,v 1.2 2004/06/10 04:14:40 akisada Exp
+#
+# Author:
+#	Hideaki YOSHIFUJI / USAGI/WIDE Project <yoshfuji@linux-ipv6.org>
+#
+########################################################################
+
+use V6evalRemote;
+
+# available options
+#     $rOpt_timeout    : seconds
+#     $rOpt_mode       : start, stop
+#     $rOpt_link0      : interface
+#     $rOpt_link1      : interface
+#     $rOpt_prefix0    : prefix for link0
+#     $rOpt_prefix1    : prefix for link1
+#     $rOpt_maxinterval: seconds
+#     $rOpt_mininterval: seconds
+#     $rOpt_chlim      : current hoplimit
+#     $rOpt_raflag     : flags (128=Managed, 64=OtherConfig)
+#     $rOpt_mtu        : link mtu
+#     $rOpt_rltime     : router lifetime (sec)
+#     $rOpt_rtime      : reachable time (msec)
+#     $rOpt_retrans    : retrans timer (msec)
+#     $rOpt_pinfoflags : flags for prefix(es) (128=OnLink, 64=AutoNomous)
+#     $rOpt_vltime     : valid lifetime for prefix(es)
+#     $rOpt_pltime     : preferred lifetime for prefix(es)
+
+$rtadvd='/usr/local/v6/sbin/radvd';
+$configfile='/tmp/radvd.conf';
+
+unless($rOpt_timeout) {
+	$rOpt_timeout = 5;
+}
+
+unless(rOpen()) {
+	exit($V6evalRemote::exitFail);
+}
+
+if(RaControlMain() < 0) {
+	rClose();
+	exit($V6evalRemote::exitFail);
+}
+
+rClose();
+exit($V6evalRemote::exitPass);
+
+
+
+#------------------------------#
+# RaControlMain                #
+#------------------------------#
+sub
+RaControlMain()
+{
+	my @interfaces = ();
+
+	if(ParseOptions(\@interfaces) < 0) {
+		return(-1);
+	}
+
+	unless(rLogin($rOpt_timeout)) {
+		return(-1);
+	}
+
+	for( ; ; ) {
+		if($rOpt_mode eq 'start') {
+			my $cmd = '';
+
+			rCommand("rm -f $configfile", $rOpt_timeout);
+
+			if(!ConfigControl(\$cmd)) {
+				rCommand($cmd, $rOpt_timeout);
+				rCommand("cat $configfile", $rOpt_timeout);
+				rCommand("$rtadvd -C $configfile",
+					$rOpt_timeout);
+			} else {
+				return(-1);	# XXX
+				# rCommand("$rtadvd", $rOpt_timeout);
+			}
+
+			last;
+		}
+
+		if($rOpt_mode eq 'stop') {
+			rCommand('killall radvd', $rOpt_timeout);
+			rCommand("rm -f $configfile", $rOpt_timeout);
+			last;
+		}
+
+		last;
+	}
+
+	unless(rLogout($rOpt_timeout)) {
+		return(-1);
+	}
+
+	return(0);
+}
+
+
+
+#------------------------------#
+# ParseOptions                 #
+#------------------------------#
+sub
+ParseOptions($)
+{
+	my ($interfaces) = @_;
+
+	# $rOpt_mode
+	unless(($rOpt_mode eq 'start') || ($rOpt_mode eq 'stop')) {
+		print STDERR "unknown mode -- $rOpt_mode\n";
+		return(-1);
+	}
+
+	# $rOpt_link0, $rOpt_link1
+	if($rOpt_mode eq 'start') {
+		unless(($rOpt_link0) || ($rOpt_link1)) {
+			print STDERR 'at least, '.
+				"one interface must be specified\n";
+			return(-1);
+		}
+
+		if($rOpt_link0) {
+			push(@$interfaces, $rOpt_link0);
+		}
+
+		if($rOpt_link1) {
+			push(@$interfaces, $rOpt_link1);
+		}
+	}
+
+	return(0);
+}
+
+#------------------------------#
+# ConfigControl                #
+#------------------------------#
+sub
+ConfigControl($)
+{
+	my ($cmd) = @_;
+
+	my $add = 0;
+
+	# Prefix
+	my $prefix0, $prefix1;
+	if (defined($rOpt_link0) && !defined($rOpt_prefix0)) {
+		$prefix0 = "3ffe:501:ffff:100::/64";
+	} else {
+		$prefix0 = $rOpt_prefix0;
+	}
+	if (defined($rOpt_link1) && !defined($rOpt_prefix1)) {
+		$prefix1 = "3ffe:501:ffff:100::/64";
+	} else {
+		$prefix1 = $rOpt_prefix1;
+	}
+
+	# Managed / OtherConfig flags
+	my $raflag, $manflag, $othconfflag;
+	if (defined(rOpt_raflag) && ($rOpt_raflag & ~192)) {
+		print "Bad value: rOpt_raflag=$rOpt_raflag.\n";
+		return -1;
+	}
+	$raflag = defined($rOpt_raflag) ? $rOpt_raflag : 0;
+	$manflag = ($raflag & 128) ? "on" : "off";
+	$othconfflag = ($raflag & 64) ? "on" : "off";
+
+	# OnLink / Auto flag
+	my $pinfoflags, $onlinkflag, $autoflag;
+	if (defined($rOpt_pinfoflags) && ($rOpt_pinfoflags & ~192)) {
+		print "Bad value: rOpt_pinfoflags=$rOpt_pinfoflags.\n";
+		return -1;
+	}
+	$pinfoflags = defined($rOpt_pinfoflags) ? $rOpt_pinfoflags : 192;
+	$onlinkflag = ($pinfoflags & 128) ? "on" : "off";
+	$autoflag = ($pinfoflags & 64) ? "on" : "off";
+
+	$$cmd  = "cat > $configfile << EOF\n";
+
+	if (defined($rOpt_link0)) {
+		$$cmd .= "interface $rOpt_link0\n{\n";
+		$$cmd .= " AdvSendAdvert on;\n";
+		$$cmd .= " MaxRtrAdvInterval $rOpt_maxinterval;\n" if (defined($rOpt_maxinterval));
+		$$cmd .= " MinRtrAdvInterval $rOpt_mininterval;\n" if (defined($rOpt_mininterval));
+		$$cmd .= " AdvManagedFlag $manflag;\n";
+		$$cmd .= " AdvOtherConfigFlag $othconfflag;\n";
+		$$cmd .= " AdvLinkMTU $rOpt_mtu;\n" if (defined($rOpt_mtu));
+		$$cmd .= " AdvReachableTime $rOpt_rtime;\n" if (defined($rOpt_rtime));
+		$$cmd .= " AdvRetransTimer $rOpt_retrans;\n" if (defined($rOpt_retrans));
+		$$cmd .= " AdvCurHopLimit $rOpt_chlim;\n" if (defined($rOpt_chlim));
+		$$cmd .= " AdvDefaultLifetime $rOpt_rltime;\n" if (defined($rOpt_rltime));
+		$$cmd .= " prefix $prefix0\n";
+		$$cmd .= " {\n";
+		$$cmd .= "  AdvOnLink $onlinkflag;\n";
+		$$cmd .= "  AdvAutonomous $autoflag;\n";
+		$$cmd .= "  AdvValidLifetime $rOpt_vltime;\n" if (defined($rOpt_vltime));
+		$$cmd .= "  AdvPreferredLifetime $rOpt_pltime;\n" if (defined($rOpt_pltime));
+		$$cmd .= " };\n";
+		$$cmd .= "};\n";
+	}
+
+	if (defined($rOpt_link1)) {
+		$$cmd .= "interface $rOpt_link1\n{\n";
+		$$cmd .= " AdvSendAdvert on;\n";
+		$$cmd .= " MaxRtrAdvInterval $rOpt_maxinterval;\n" if (defined($rOpt_maxinterval));
+		$$cmd .= " MinRtrAdvInterval $rOpt_mininterval;\n" if (defined($rOpt_mininterval));
+		$$cmd .= " AdvManagedFlag $manflag;\n";
+		$$cmd .= " AdvOtherConfigFlag $othconfflag;\n";
+		$$cmd .= " AdvLinkMTU $rOpt_mtu;\n" if (defined($rOpt_mtu));
+		$$cmd .= " AdvReachableTime $rOpt_rtime;\n" if (defined($rOpt_rtime));
+		$$cmd .= " AdvRetransTimer $rOpt_retrans;\n" if (defined($rOpt_retrans));
+		$$cmd .= " AdvCurHopLimit $rOpt_chlim;\n" if (defined($rOpt_chlim));
+		$$cmd .= " AdvDefaultLifetime $rOpt_rltime;\n" if (defined($rOpt_rltime));
+		$$cmd .= " prefix $prefix1\n";
+		$$cmd .= " {\n";
+		$$cmd .= "  AdvOnLink $onlinkflag;\n";
+		$$cmd .= "  AdvAutonomous $autoflag;\n";
+		$$cmd .= "  AdvValidLifetime $rOpt_vltime;\n" if (defined($rOpt_vltime));
+		$$cmd .= "  AdvPreferredLifetime $rOpt_pltime;\n" if (defined($rOpt_pltime));
+		$$cmd .= " };\n";
+		$$cmd .= "};\n";
+	}
+
+	$$cmd .= "EOF\n";
+
+	return 0;
+}
+

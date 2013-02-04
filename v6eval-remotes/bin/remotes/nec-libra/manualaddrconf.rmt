@@ -1,0 +1,300 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/nec-libra/manualaddrconf.rmt,v 1.4 2001/10/05 06:27:24 masaxmasa Exp $
+#
+########################################################################
+use V6evalRemote;
+
+rOpen() || goto error;
+
+$NUTif = $rOpt_if;
+$NUTaddr = $rOpt_addr;
+$NUTprfxlen = $rOpt_len;
+$NUTnetmask = $rOpt_netmask;
+$NUTaddrtype = $rOpt_type;
+$rOpt_addrfamily = "inet6" if ! defined($rOpt_addrfamily);
+$NUTaddrfamily = $rOpt_addrfamily;
+$rOpt_timeout = 5 if ! defined($rOpt_timeout);
+$rOpt_dadtime = 2 if ! defined($rOpt_dadtime);
+
+if ($NUTaddrfamily eq "inet" ) {
+	if ($NUTaddrtype eq "add"){
+		$NUTparam = "netmask ".$NUTnetmask if ($NUTnetmask ne "");
+	}elsif ($NUTaddrtype eq "delete"){
+		$NUTparam = "delete";
+	}else{
+		print "$NUTaddrfamily: Unknown address type $NUTaddrtype\n";
+		goto error;
+	}
+}elsif ($NUTaddrfamily eq "inet6" ) {
+	if ($NUTaddrtype eq "unicast"){
+		$NUTparam = "alias";
+	}elsif ($NUTaddrtype eq "anycast"){
+		$NUTparam = "alias anycast";
+	}elsif ($NUTaddrtype eq "delete"){
+		$NUTparam = "delete";
+	}else{
+		print "$NUTaddrfamily: Unknown address type $NUTaddrtype\n";
+		goto error;
+	}
+}else {
+	print "$NUTaddrfamily: Unknown address type $NUTaddrfamily\n";
+	goto error;
+}
+
+rLogin($rOpt_timeout) || goto error;
+libra_ifconfig($NUTif, $NUTaddrfamily, $NUTaddr, $NUTprfxlen, $NUTparam)
+    || goto error;
+rLogout($rOpt_timeout) || goto error;
+
+sleep($rOpt_dadtime);
+rClose();
+exit($V6evalRemote::exitPass);
+
+error:
+    rClose();
+    exit($V6evalRemote::exitFail);
+
+########################################################################
+sub libra_ifconfig($$$$$)
+{
+    my($if, $addrfamily, $addr, $prfxlen, $param)=@_;
+
+    goto error if $addrfamily ne "inet" && $addrfamily ne "inet6";
+
+    #
+    # * CAUTION *
+    # ifconfig command of V2.01 has a bug.
+    # For example, if you invoke a ifconfig command,
+    # "ifconfig ed0 inet6 108:108:108:0:200:ff:fe00:a0a0 prefixlen 64 alias",
+    # a route to "108:108:108::/64" should be attached.
+    # However, the route is not attachecd.
+    # So, another route command must be needed to add the route explicitly,
+    # "route add -inet6 108:108:108:: -prefixlen 64 fe80::200:e8ff:fe94:e852
+    # -iface -ifname ed0".
+    #
+    libra_add_route($if, $addrfamily, $addr, $prfxlen, $param) || goto error;
+
+    #
+    if($addrfamily eq "inet6") {
+	rCommand("/usr/local/ptcpip/sbin/ifconfig $if $addrfamily $addr ".
+		 "prefixlen $prfxlen $param", 15) || goto error;
+    }else {
+	rCommand("/usr/local/ptcpip/sbin/ifconfig ".
+		 "$if $addrfamily $addr $param", 15)
+	    || goto error;
+    }
+
+    #
+    return(1);
+
+error:
+    return(0);
+}
+
+sub libra_add_route($$$$$)
+{
+    my($if, $addrfamily, $addr, $prfxlen, $param)=@_;
+
+    goto end if $addrfamily ne inet6;
+
+    # get link-local address
+    my($linklocal)=libra_get_linklocal($if);
+    goto error if $linklocal eq "";
+
+    # get "108:108:108::/64" like strings
+    my(@addr)=address($addr);
+    goto error if $#addr < 7;
+
+    @addr=addrmust($prfxlen, @addr);
+    $addr=$addr[0];
+    for($i=1; $i<8; $i++) {
+	$addr.=":$addr[$i]";
+    }
+
+    if(0) {
+	my($n)=int($prfxlen / 16);
+	splice(@addr, $#addr-(n-1));
+	$addr="";
+	for($i=0; $i<$n; $i++) {
+	    $addr.="$addr[$i]:";
+	}
+	$addr.=":";
+    }
+
+    # invoke route command
+    my($cmd);
+    if($param eq "delete") {
+	$cmd="/usr/local/ptcpip/sbin/route delete -inet6 $addr ".
+	    "-prefixlen $prfxlen $linklocal ".
+	    "-iface -ifname $if";
+    } else {
+	$cmd="/usr/local/ptcpip/sbin/route add -inet6 $addr ".
+	    "-prefixlen $prfxlen $linklocal ".
+	    "-iface -ifname $if";
+    }
+    rCommand($cmd, $timeout) || goto error;
+
+end:
+    return(1);
+
+error:
+    return(0);
+}
+
+sub libra_get_linklocal($)
+{
+    my($if)=@_;
+
+    rCommand("/usr/local/ptcpip/sbin/ifconfig $if", $timeout) || goto error;
+    my(@lines)=rCmdOutput();
+    shift(@lines); # remove command line
+    pop(@lines);   # remove command prompt
+    foreach(@lines) {
+	#
+	# #ifconfig ed0
+	# ed0: flags=8843<UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+	#        inet6 100:100:100:: prefixlen 64 anycast 
+	#        inet6 100:100:100:0:200:e8ff:fe94:e852 prefixlen 64 
+	#        inet6 fe80:: prefixlen 64 anycast 
+	#        inet6 fe80::200:e8ff:fe94:e852 prefixlen 64 <=== we need a link-local address
+	#        ether 00:00:e8:94:e8:52 
+	#
+        next if ! /^\s+(inet6)\s+(fe80::\S+)\s+(prefixlen)\s+(\d+)/;
+        return($2);
+    }
+error:
+    print STDERR "$if: Not found\n";
+    return("");
+}
+
+########################################################################
+sub address($)
+{
+    my($adrs)=@_;
+    my(@newadrs)=();
+    my(@null)=();
+
+    if($adrs=~/(\d+)\.(\d+)\.(\d+)\.(\d+)$/) {
+	my(@x);
+	for($i=1; $i<=4; $i++) {
+	    $x[$i-1]= sprintf("%02x", $$i);
+	}
+	$adrs=~s/(\d+)\.(\d+)\.(\d+)\.(\d+)$//;
+	$adrs.="$x[0]$x[1]:$x[2]$x[3]";
+    }
+
+    $adrs=~tr/A-Z/a-z/;
+    @adrs=split(/::/, $adrs);
+    if($#adrs < 0) {
+        print STDERR "Null address\n";
+        goto error;
+    } elsif($#adrs == 0) {
+        #
+        # 1:2:3:4:5:6:7:8
+        #
+        @newadrs=split(/:/, $adrs);
+        if($#newadrs != 7) {
+            print STDERR "$adrs; Too few/many ``:''\n";
+            goto error;
+        }
+    } elsif($#adrs == 1) {
+        #
+        # ex. 1:2::5:6:7:8
+        #
+        my(@before)=split(/:/, $adrs[0]);
+        my(@after)=split(/:/, $adrs[1]);
+        my($x)=6-$#before-$#after;
+        if($x <= 0) {
+            print STDERR "$adrs; Too few/many ``:''\n";
+            goto error;
+        }
+
+        foreach(@before) {
+            push(@newadrs, $_);
+        }
+        for($i=0; $i<$x; $i++) {
+            push(@newadrs, 0);
+        }
+        foreach(@after) {
+            push(@newadrs, $_);
+        }
+
+    } else {
+        print STDERR "$adrs; Too many ``::''\n";
+        goto error;
+    }
+    return(@newadrs);
+
+error:
+    return(@null);
+}
+
+sub addrmust($$)
+{
+    my($prfxlen, @adrs)=@_;
+
+    my($l1)=int($prfxlen/16);
+    my($l2)=$prfxlen-($l1*16);
+
+    my(@musk)=();
+    for($idx=0; $idx<$l1; $idx++) {
+	$musk[$idx]=65535;
+    }
+    if($l2) {
+	$musk[$idx++]=(2**16)-(2**(16-$l2));
+    }
+    for(; $idx<8; $idx++) {
+	$musk[$idx]=0;
+    }
+
+    for($idx=0; $idx<8; $idx++) {
+	my($num)=hex($adrs[$idx]);
+	$num&=$musk[$idx];
+	$adrs[$idx]=sprintf("%x", $num);
+    }
+
+    @adrs;
+}
+
+########################################################################

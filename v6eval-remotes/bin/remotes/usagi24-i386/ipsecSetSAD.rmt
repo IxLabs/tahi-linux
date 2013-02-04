@@ -1,0 +1,190 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/usagi24-i386/ipsecSetSAD.rmt,v 1.1 2004/03/24 08:07:36 kenta Exp $
+#
+########################################################################
+use V6evalRemote;
+
+rOpen() || goto error;
+
+# set default values
+
+$rOpt_timeout=30 if ! defined($rOpt_timeout);
+
+# check parameters
+
+if ($rOpt_src eq undef || $rOpt_dst eq undef || $rOpt_spi eq undef) {
+    print STDERR "src,dst,spi is required\n";
+    usage();
+    goto error;
+}
+if ($rOpt_mode !~ /transport|tunnel/) {
+    print STDERR "mode must be one of transport|tunnel\n";
+    usage();
+    goto error;
+}
+if ($rOpt_protocol !~ /ah|esp|ah-esp/) {
+    print STDERR "protocol must be one of ah|esp|ah-esp\n";
+    usage();
+    goto error;
+}
+
+#----------------------------------------------------------------------
+
+my($cmd, $default_spi);
+
+rLogin($rOpt_timeout) || goto error;
+
+if ($rOpt_protocol eq "ah") {
+    $cmd = add_ah_usagi();
+    rCommand($cmd , $rOpt_timeout) || goto error;
+}
+
+if ($rOpt_protocol eq "esp") {
+    $cmd = add_esp_usagi();
+    rCommand($cmd , $rOpt_timeout) || goto error;
+}
+
+if ($rOpt_protocol eq "ah-esp") {
+    $cmd = add_ah_usagi();
+    rCommand($cmd , $rOpt_timeout) || goto error;
+    $tmp_cmd = add_esp_usagi();
+    rCommand($cmd , $rOpt_timeout) || goto error;
+}
+
+if ($rOpt_mode eq "tunnel" ) {
+	goto error;
+}
+
+rLogout($rOpt_timeout) || goto error;
+
+rClose();
+exit($V6evalRemote::exitPass);
+
+error:
+    rClose();
+    exit($V6evalRemote::exitFail);
+
+########################################################################
+sub add_ah_usagi()
+{
+    my ($cmd);
+
+    $cmd =
+	" /usr/local/v6/sbin/pfkey -A sa -T ah -S $rOpt_spi" .
+	" -s $rOpt_src -d $rOpt_dst";
+
+    if ($rOpt_aalgo eq "hmac-md5" && $rOpt_aalgokey ne undef) {
+	$cmd .= " --auth $rOpt_aalgo --authkey 0x".char2ascii($rOpt_aalgokey);
+    } elsif ($rOpt_aalgo eq "hmac-sha1" && rOpt_aalgokey ne undef) {
+	$cmd .= " --auth $rOpt_aalgo --authkey 0x".char2ascii($rOpt_aalgokey);
+    } else {
+	return;
+    }
+
+#    $cmd .= "\n";
+
+    return $cmd;
+}
+########################################################################
+sub add_esp_usagi()
+{
+    my ($cmd,$said,$esp_algo);
+
+    $cmd =
+	" /usr/local/v6/sbin/pfkey -A sa -T esp -S $rOpt_spi".
+	" -s $rOpt_src -d $rOpt_dst";
+
+    if ($rOpt_ealgo eq "des-cbc" && $rOpt_ealgokey ne undef) {
+	$cmd .= " --esp $rOpt_ealgo --espkey 0x" .char2ascii($rOpt_ealgokey);
+    } elsif ($rOpt_ealgo eq "3des-cbc" && $rOpt_ealgokey ne undef) {
+	$cmd .= " --esp $rOpt_ealgo --espkey 0x" .char2ascii($rOpt_ealgokey);
+    } elsif ($rOpt_ealgo eq "null") {
+	$cmd .= " --esp $rOpt_ealgo";
+    } else {
+	return;
+    }
+
+    if( $rOpt_eauth eq "hmac-md5" && $rOpt_eauthkey ne undef ){
+	$cmd .= " --auth $rOpt_eauth --authkey 0x". char2ascii($rOpt_eauthkey);
+    } elsif ($rOpt_eauth eq "hmac-sha1" && $rOpt_eauthkey ne undef ){
+	$cmd .= " --auth $rOpt_eauth --authkey 0x". char2ascii($rOpt_eauthkey);
+    }
+
+#    $cmd .= "\n";
+
+    return $cmd;
+}
+
+sub char2ascii()
+{
+    my(@chars,$result);
+    @chars = unpack "C*", @_[0];
+    foreach(@chars){
+	$result .= sprintf( "%02X", $_ );
+    }
+    return $result;
+}
+
+########################################################################
+sub usage()
+{
+    print STDERR "ipsecSetSAD.rmt [parameters]\n";
+    print STDERR "parameters:\n";
+    print STDERR "src=source address\n";
+    print STDERR "dst=destination address\n";
+    print STDERR "spi=SPI(default=$default_spi)\n";
+    print STDERR "mode={transport|tunnel}\n";
+    print STDERR "protocol={ah|esp|ah-esp}\n";
+    print STDERR "aalgo={hmac-md5|hmac-sha1}\n";
+    print STDERR "aalgokey=AH algorithm key\n";
+    print STDERR "ealgo={des-cbc|3des-cbc|null}\n";
+    print STDERR "ealgokey=ESP algorithm key\n";
+    print STDERR "eauth={hmac-md5|hmac-sha1}\n";
+    print STDERR "eauthkey=ESP authentication key\n";
+    print STDERR "padding={sequential|zero|random}\n";
+    print STDERR "nsrc=source VPN site address\n";
+    print STDERR "ndst=destination VPN site address\n";
+}
+
+########################################################################

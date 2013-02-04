@@ -1,0 +1,185 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/manual/ikeSetSA.rmt,v 1.3 2005/05/12 08:38:03 ozoe Exp $
+#
+########################################################################
+use V6evalRemote;
+use File::Basename;
+
+rArg() || goto error;
+
+my $basename	= basename($0, '.rmt');
+my $prompt	= "$basename> ";
+
+print "\n";
+print $prompt . "Set Security Association Configure of NUT manually as following:\n\n";
+#print $prompt . "This remote command is incomplete one.\n";
+#print $prompt . "If you want to continue test, be careful.\n\n";
+
+print $prompt . "Set pre-shared key.\n" if ($rOpt_key_id ne undef);
+print $prompt . "pre-shared key id = $rOpt_key_id\n" if ($rOpt_key_id ne undef);
+print $prompt . "pre-shared key = $rOpt_key_value\n\n" if ($rOpt_key_value ne undef);
+
+print $prompt . "Set certificate.\n" if ($rOpt_certificate_type ne undef);
+print $prompt . "certificate type = $rOpt_certificate_type\n" if ($rOpt_certificate_type ne undef);
+print $prompt . "certificate file = $rOpt_certificate_file\n" if ($rOpt_certificate_file ne undef);
+print $prompt . "private key file = $rOpt_privkey_file\n" if ($rOpt_privkey_file ne undef);
+print $prompt . "peers certificate file = $rOpt_peers_certfile\n" if ($rOpt_peers_certfile ne undef);
+print $prompt . "send certificate = $rOpt_send_cert\n" if ($rOpt_send_cert ne undef);
+print $prompt . "send certificate request = $rOpt_send_cr\n" if ($rOpt_send_cr ne undef);
+print $prompt . "verify certificate = $rOpt_verify_cert\n\n" if ($rOpt_verify_cert ne undef);
+
+
+print $prompt . "Set Phase-1 parameter.\n";
+print $prompt . "dst = $rOpt_dst\n" if ($rOpt_dst ne undef);
+print $prompt . "dst port = $rOpt_dst_port\n" if ($rOpt_dst_port ne undef);
+print $prompt . "exchange mode = $rOpt_exchange_mode\n" if ($rOpt_exchange_mode ne undef);
+print $prompt . "doi = $rOpt_doi\n" if ($rOpt_doi ne undef);
+print $prompt . "situation = $rOpt_situation\n" if ($rOpt_situation ne undef);
+print $prompt . "my id type = $rOpt_isakmp_src_id_type\n" if ($rOpt_isakmp_src_id_type ne undef);
+print $prompt . "my id = $rOpt_isakmp_src_id\n" if ($rOpt_isakmp_src_id ne undef);
+print $prompt . "peers id type = $rOpt_peers_id_type\n" if ($rOpt_peers_id_type ne undef);
+print $prompt . "peers id = $rOpt_peers_id\n" if ($rOpt_peers_id ne undef);
+print $prompt . "verify identifier = $rOpt_verify_identifier\n" if ($rOpt_verify_identifier ne undef);
+print $prompt . "nonce size = $rOpt_nonce_size\n" if ($rOpt_nonce_size ne undef);
+print $prompt . "\ttransform 1\n" if ($rOpt_encryption_algorithm ne undef);
+print $prompt . "\t\tencryption algorithm = $rOpt_encryption_algorithm\n" if ($rOpt_encryption_algorithm ne undef);
+print $prompt . "\t\thash algorithm = $rOpt_hash_algorithm\n" if ($rOpt_hash_algorithm ne undef);
+print $prompt . "\t\tauthentication method = $rOpt_authentication_method\n" if ($rOpt_authentication_method ne undef);
+print $prompt . "\t\tdh group= $rOpt_dh_group\n" if ($rOpt_dh_group ne undef);
+print $prompt . "\t\tlifetime = $rOpt_lifetime\n" if ($rOpt_lifetime ne undef);
+print $prompt . "\t\tlifetime unit = $rOpt_lifetime_unit\n" if ($rOpt_lifetime_unit ne undef);
+print $prompt . "\ttransform 2\n" if ($rOpt_encryption_algorithm_2 ne undef);
+print $prompt . "\t\tencryption algorithm 2 = $rOpt_encryption_algorithm_2\n" if ($rOpt_encryption_algorithm_2 ne undef);
+print $prompt . "\t\thash algorithm 2 = $rOpt_hash_algorithm_2\n" if ($rOpt_hash_algorithm_2 ne undef);
+print $prompt . "\t\tauthentication method 2 = $rOpt_authentication_method_2\n" if ($rOpt_authentication_method_2 ne undef);
+print $prompt . "\t\tdh group 2 = $rOpt_dh_group_2\n" if ($rOpt_dh_group_2 ne undef);
+print $prompt . "\t\tlifetime 2 = $rOpt_lifetime_2\n" if ($rOpt_lifetime_2 ne undef);
+print $prompt . "\t\tlifetime unit2 = $rOpt_lifetime_unit_2\n" if ($rOpt_lifetime_unit_2 ne undef);
+print "\n";
+print $prompt . "then press enter key.\a\n";
+
+<STDIN>;
+
+print $prompt . "Set Phase-2 parameter.\n";
+print $prompt . "id type = $rOpt_ph2_id_type\n" if ($rOpt_ph2_id_type ne undef);
+print $prompt . "src id = $rOpt_ph2_src_id\n" if ($rOpt_ph2_src_id ne undef);
+print $prompt . "dst id = $rOpt_ph2_dst_id\n" if ($rOpt_ph2_dst_id ne undef);
+print $prompt . "src port = $rOpt_ph2_src_port\n" if ($rOpt_ph2_src_port ne undef);
+print $prompt . "dst port = $rOpt_ph2_dst_port\n" if ($rOpt_ph2_dst_port ne undef);
+print $prompt . "src upper = $rOpt_ph2_src_upper\n" if ($rOpt_ph2_src_upper ne undef);
+print $prompt . "dst upper = $rOpt_ph2_dst_upper\n" if ($rOpt_ph2_dst_upper ne undef);
+
+
+
+for (my $i = 1; $i <= $rOpt_ipsec_p_num; $i++){
+    my $num = eval '$rOpt_ipsec_p'."$i".'_t_num';
+    my $ipsec_p_t_num = $num;
+    
+    my $ph2_lt = undef;
+    my $ph2_lt_unit = undef;
+    my $ph2_enc_alg = undef;
+    my $ph2_auth_alg= undef;
+    my $ph2_auth_mtd = undef;
+
+    print $prompt . "proposal "."$i\n";
+    
+    for (my $j = 1; $j <= $ipsec_p_t_num; $j++){
+	
+	$ph2_lt_value = eval '$rOpt_ph2_p'. "$i"."_t$j".'_lt';
+	$ph2_lt_unit = eval '$rOpt_ph2_p'. "$i"."_t$j".'_lt_unit';
+	$ph2_enc_alg = eval '$rOpt_ph2_p'. "$i"."_t$j".'_enc_alg';
+	$ph2_auth_alg= eval '$rOpt_ph2_p'. "$i"."_t$j".'_auth_alg';
+	$ph2_auth_mtd = eval '$rOpt_ph2_p'. "$i"."_t$j".'_auth_mtd';
+
+	print $prompt . "\ttransform "."$j\n";
+	
+	print $prompt . "\t\ttransform id = $ph2_enc_alg\n" if ($ph2_enc_alg ne undef);
+	print $prompt . "\t\ttransform id = $ph2_auth_alg\n" if ($ph2_auth_alg ne undef);
+	print $prompt . "\t\tauthentication algorithm = $ph2_auth_mtd\n" if ($ph2_auth_mtd ne undef);
+	
+	print $prompt . "\t\tpfs group = $rOpt_pfs_group\n" if ($rOpt_pfs_group ne undef);
+	print $prompt . "\t\tlifetime = $ph2_lt_value\n" if ($ph2_lt_value ne undef);
+	print $prompt . "\t\tlifetime unit = $ph2_lt_unit\n" if ($ph2_lt_unit ne undef);
+    }
+}
+print "\n";
+print $prompt . "Execute IKE program.\n";
+print $prompt . "then press enter key.\a\n";
+
+<STDIN>;
+
+exit($V6evalRemote::exitPass);
+
+error:
+    rClose();
+    exit($V6evalRemote::exitFail);
+
+########################################################################
+__END__
+
+=head1 NAME
+
+B<ikeSetSA.rmt> - set IKE configuration and start IKE negotiation
+
+=head1 SYNOPSIS
+
+B<ikeSetSA.rmt> [-commonoption ...] [options]
+
+=head1 DESCRIPTION
+
+*options
+	TBD
+
+=head1 RETURN VALUES
+
+The B<ikeSetSA.rmt> exits with one of the following values:
+ 0  command completed successfully
+ 1  command failed
+
+=head1 SEE ALSO
+
+perldoc V6evalRemote
+
+=cut
+

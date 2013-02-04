@@ -1,0 +1,34 @@
+		Installing IPv6 Conformance Test Tool
+
+			     TAHI Project
+
+		     $Date: 2005/05/25 07:26:16 $
+
+
+
+Terminology
+===========
+
+Tester Node (TN)
+	A tester node for the conformance tests.
+
+
+
+Installing the package onto TN
+================================================================
+
+1. Install v6eval
+
+2. Extracting the package
+
+3. Compiling & installing the tool
+
+	Install files in /usr/local/v6eval directory.
+
+		% cd $SOMEWHERE/v6eval-remotes-X.X
+		% make
+		# make install
+
+
+
+							[end of INSTALL]

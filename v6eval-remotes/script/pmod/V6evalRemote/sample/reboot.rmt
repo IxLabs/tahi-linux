@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+
+# Example:
+# reboot.rmt [-options ...] [timeout=5]
+
+use V6evalRemote;
+
+print "Open remote\n";
+rOpen() || die;
+$type=rType();
+rLogStdout(1);
+
+$rOpt_timeout=300 if $rOpt_timeout == undef;
+
+if($type eq "kame-freebsd") {
+	print "Login\n";
+	rLogin(5) || die;
+	print "Reboot\n";
+	rReboot($rOpt_timeout) || die;
+} else {
+	print "$type: Unknown target type\n";
+}
+
+print "Close remote\n";
+rClose() || die;

@@ -1,0 +1,291 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 2002, 2003, 2004, 2005 Yokogawa Electric Corporation, 
+# INTAP(Interoperability Technology Association for Information 
+# Processing, Japan), IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/lcna/ipsecSetSPD.rmt,v 1.4 2002/10/21 03:46:35 akisada Exp $
+#
+########################################################################
+
+use V6evalRemote;
+
+rOpen() || goto error;
+
+# set default values
+$rOpt_timeout=10 if ! defined($rOpt_timeout);
+
+$rOpt_upperspec = "any" if ! defined($rOpt_upperspec);
+$rOpt_policy = "ipsec" if ! defined($rOpt_policy);
+$rOpt_level = "require" if ! defined($rOpt_level);
+
+# check parameters
+if(!defined($rOpt_src) || !defined($rOpt_dst)) {
+	print STDERR "src,dst is required\n";
+	usage();
+	goto error;
+}
+
+if($rOpt_policy !~ /ipsec|none|discard/) {
+	print STDERR "policy must be one of ipsec|none|discard\n";
+	usage();
+	goto error;
+}
+
+if($rOpt_policy eq "ipsec") {
+	if($rOpt_mode !~ /transport/) {
+		print STDERR "mode must be transport\n";
+		usage();
+		goto error;
+	}
+
+	if($rOpt_protocol !~ /esp|esp-auth/) {
+		print STDERR "protocol must be esp|esp-auth/\n";
+		usage();
+		goto error;
+	}
+
+	if($rOpt_upperspec !~ /any|ipv6-icmp|tcp|udp/) {
+		print STDERR "upperspec must be one of any|tcp|udp\n";
+		usage();
+		goto error;
+	}
+
+	if($rOpt_direction !~ /in|out/) {
+		print STDERR "direction must be one of in|out\n";
+		usage();
+		goto error;
+	}
+
+	if($rOpt_level !~ /use|require/) {
+		print STDERR "level must be one of use|require\n";
+		usage();
+		goto error;
+	}
+
+	if($rOpt_mode eq "transport") {
+		if ($rOpt_tsrc ne undef && $rOpt_tdst ne undef) {
+			print STDERR "tsrc,tdst is defined in transport mode\n";
+			usage();
+			goto error;
+		}
+	}
+}
+
+#-----------------------------------------------------------------------
+
+########################################################################
+# LCNA doesn't support "XXXXX".
+########################################################################
+
+#if($rOpt_policy eq "XXXXX") {
+#	goto notsupported;
+#}
+
+########################################################################
+
+$cmd = "/bin/cat >> /tmp/ipsec.conf\r";
+
+if($rOpt_upperspec eq "any") {
+	$cmd .= "[proto] any\r";
+} elsif($rOpt_upperspec eq "ipv6-icmp") {
+#	$cmd .= "[proto] ICMP\r";
+	goto notsupported;
+} elsif($rOpt_upperspec eq "tcp") {
+	$cmd .= "[proto] TCP\r";
+#	goto notsupported;
+} elsif($rOpt_upperspec eq "udp") {
+	$cmd .= "[proto] UDP\r";
+} else {
+	$cmd .= "[proto] *\r";
+}
+
+if($rOpt_policy eq "none") {
+	if($rOpt_direction eq "in") {
+		$cmd .= inbound_addr();
+		$cmd .= "[inpolicy] PASS\r";
+	} elsif($rOpt_direction eq "out") {
+		$cmd .= outbound_addr();
+		$cmd .= "[outpolicy] PASS\r";
+	}
+}elsif($rOpt_policy eq "discard") {
+	if($rOpt_direction eq "in") {
+		$cmd .= inbound_addr();
+		$cmd .= "[inpolicy] DISCARD\r";
+		$cmd .= "[outpolicy] PASS\r";
+	} elsif($rOpt_direction eq "out") {
+		$cmd .= outbound_addr();
+		$cmd .= "[inpolicy] PASS\r";
+		$cmd .= "[outpolicy] DISCARD\r";
+	}
+} else {
+	if($rOpt_protocol eq "esp") {
+		if($rOpt_direction eq "in") {
+			$cmd .= inbound_addr();
+			$cmd .= "[inpolicy] ESP\r";
+			$cmd .= "[outpolicy] PASS\r";
+		} elsif($rOpt_direction eq "out") {
+			$cmd .= outbound_addr();
+			$cmd .= "[inpolicy] PASS\r";
+			$cmd .= "[outpolicy] ESP\r";
+		}
+	}elsif($rOpt_protocol eq "esp-auth") {
+		if($rOpt_direction eq "in") {
+			$cmd .= inbound_addr();
+			$cmd .= "[inpolicy] ESP_AUTH\r";
+			$cmd .= "[outpolicy] PASS\r";
+		} elsif($rOpt_direction eq "out") {
+			$cmd .= outbound_addr();
+			$cmd .= "[inpolicy] PASS\r";
+			$cmd .= "[outpolicy] ESP_AUTH\r";
+		}
+	}
+}
+
+$cmd .= "\cD" ;
+
+$catspd = "/bin/cat /tmp/ipsec.conf";
+$setspd = "/usr/sbin/tiny_ipsec_setup -c /tmp/ipsec.conf";
+$dmpspd = "/usr/sbin/tiny_ipsec_show";
+
+rLogin($rOpt_timeout) || goto error;
+rCommand($cmd , $rOpt_timeout) || goto error;
+rCommand($catspd , $rOpt_timeout) || goto error;
+($ret_val = rCommand($setspd , $rOpt_timeout)) || goto error;
+if ($ret_val != 1) {
+	print STDERR $ret_val if $V6evalRemote::debug;
+	goto error;
+}
+rCommand($dmpspd , $rOpt_timeout) || goto error;
+rLogout($rOpt_timeout) || goto error;
+
+rClose();
+exit($V6evalRemote::exitPass);
+
+notsupported:
+	rClose();
+	exit($V6evalRemote::exitNS);
+
+error:
+	rClose();
+	exit($V6evalRemote::exitFail);
+
+#-----------------------------------------------------------------------
+# Set src address and dst address
+#
+sub inbound_addr() {
+	my($cmd);
+
+        my($hex_sport);
+        my($hex_dport);
+
+        $hex_sport = sprintf "%X", $rOpt_sport;
+        $hex_dport = sprintf "%X", $rOpt_dport;
+
+	print STDERR "src port: $hex_sport" if $V6evalRemote::debug;
+	print STDERR "dst port: $hex_dport" if $V6evalRemote::debug;
+
+	if($rOpt_sport eq "") {
+		$cmd .= "[send_peer] [$rOpt_src]\r" ;
+		$cmd .= "[recv_peer] [$rOpt_src]\r" ;
+	} else {
+		$cmd .= "[send_peer] [$rOpt_src]:0x$hex_sport\r";
+		$cmd .= "[recv_peer] [$rOpt_src]:0x$hex_sport\r";
+	}
+
+	if($rOpt_dport eq "") {
+		$cmd .= "[send_myself] GLOBAL\r";
+		$cmd .= "[recv_myself] GLOBAL\r";
+	} else {
+		$cmd .= "[send_myself] GLOBAL:0x$hex_dport\r";
+		$cmd .= "[recv_myself] GLOBAL:0x$hex_dport\r";
+	}
+
+	return $cmd;
+}
+
+sub outbound_addr() {
+	my($cmd);
+
+        my($hex_sport);
+        my($hex_dport);
+
+        $hex_sport = sprintf "%X", $rOpt_sport;
+        $hex_dport = sprintf "%X", $rOpt_dport;
+
+	print STDERR "src port: $hex_sport" if $V6evalRemote::debug;
+	print STDERR "dst port: $hex_dport" if $V6evalRemote::debug;
+
+	if($rOpt_sport eq "") {
+		$cmd .= "[send_myself] GLOBAL\r";
+		$cmd .= "[recv_myself] GLOBAL\r";
+	} else {
+		$cmd .= "[send_myself] GLOBAL:0x$hex_sport\r";
+		$cmd .= "[recv_myself] GLOBAL:0x$hex_sport\r";
+	}
+
+	if($rOpt_dport eq "") {
+		$cmd .= "[send_peer] [$rOpt_dst]\r" ;
+		$cmd .= "[recv_peer] [$rOpt_dst]\r" ;
+	} else {
+		$cmd .= "[send_peer] [$rOpt_dst]:0x$hex_dport\r";
+		$cmd .= "[recv_peer] [$rOpt_dst]:0x$hex_dport\r";
+	}
+
+	return $cmd;
+}
+
+#-----------------------------------------------------------------------
+
+sub usage() {
+	print STDERR "ipsecSetSPD.rmt [parameters]\n";
+	print STDERR "parameters:\n";
+        print STDERR "[send_peer] addr [:port] destination address at sending\n";
+        print STDERR "[send_myself] addr [:port] {LINKLOCAL|SITELOCAL|GLOBAL|!GLOBAL|ALL}\n";
+        print STDERR "[recv_peer] addr [:port] src address at recieve\n";
+        print STDERR "[recv_myself] addr [:port] {LINKLOCAL|SITELOCAL|GLOBAL|!GLOBAL|ALL}\n";
+        print STDERR "[proto] {TCP|UDP|any|*} (default:any)\n";
+        print STDERR "[protocol] esp|esp-auth (default:esp)\n";
+        print STDERR "[mode] transport (default:transport)\n";
+	print STDERR "[inpolicy] {ESP|ESP_AUTH|PASS|DISCARD} (default:ESP)\n";
+	print STDERR "[outpolicy] {ESP|ESP_AUTH|PASS|DISCARD} (default:ESP)\n";
+}
+
+########################################################################

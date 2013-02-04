@@ -1,0 +1,230 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/cisco-ios/dhcp6c.rmt,v 1.2 2003/03/11 07:22:37 akisada Exp $
+#
+########################################################################
+use V6evalRemote;
+
+rOpen() || goto error;
+
+#
+$type=$V6evalTool::NutDef{Type};
+if($type eq router) {
+    if($rOpt_Start && !$rOpt_link0 && !$rOpt_link1) {
+        print STDERR "Specify link0=XXX and/or link1=XXX\n";
+        goto error;
+    }
+}
+else{
+    if($rOpt_Start && !$rOpt_link0) {
+        print STDERR "Specify link0=XXX\n";
+        goto error;
+    }
+}
+#
+$rOpt_timeout=5
+    if ! defined($rOpt_timeout);
+
+##Delayed Authentication
+goto notsupported
+    if defined($rOpt_delay_auth);
+##Reconfigure Key Authentication
+goto notsupported
+    if defined($rOpt_key_auth);
+
+#Included option
+##Rapid Commit option 
+if (defined($rOpt_rapidcommit)){
+   $rapidcommit=1;
+}
+else{
+   $rapidcommit=0;
+}
+
+#
+rLogin($rOpt_timeout) || goto error;
+cisco_dhcp6c() || goto error;
+rLogout($rOpt_timeout) || goto error;
+
+rClose();
+exit($V6evalRemote::exitPass);
+
+error:
+    rClose();
+    exit($V6evalRemote::exitFail);
+
+notsupported:
+    rClose();
+    exit($V6evalRemote::exitNS);
+
+########################################################################
+sub cisco_dhcp6c()
+{
+    if($rOpt_start) {
+	cisco_start_dhcp6c() || goto error;
+    } elsif($rOpt_set) {
+    } elsif($rOpt_stop) {
+	cisco_kill_dhcp6c() || goto error;
+    } elsif($rOpt_release) {
+	cisco_kill_dhcp6c() || goto error;
+    } elsif($rOpt_Link) {
+	cisco_link_dhcp6c() || goto error;
+    } else {
+	print "Nothing happed. Please specify start/stop.\n";
+    }
+    return(1);
+
+error:
+    return(0);
+}
+
+sub cisco_link_dhcp6c()
+{
+    rCommand("configure terminal", $rOpt_timeout) || goto error;
+    #
+    # up/down prefix delegation interface
+    #
+    rCommand("interface $rOpt_link0", $rOpt_timeout) || goto error;
+    if($rOpt_up) {
+        rCommand("no shutdown", $rOpt_timeout) || goto error;
+    } else {
+        rCommand("shutdown", $rOpt_timeout) || goto error;
+    }
+    rCommand("exit", $rOpt_timeout) || goto error;
+    #
+    rCommand("exit", $rOpt_timeout) || goto error;
+
+    return(1);
+
+error:
+    return(0);
+}
+#
+sub cisco_kill_dhcp6c()
+{
+    rCommand("configure terminal", $rOpt_timeout) || goto error;
+    #
+    # set prefix delegation interface
+    #
+    rCommand("interface $rOpt_link0", $rOpt_timeout) || goto error;
+    rCommand("no ipv6 dhcp client pd", $rOpt_timeout) || goto error;
+    rCommand("exit", $rOpt_timeout) || goto error;
+    #
+    # set down stream side interface
+    #
+    rCommand("interface $rOpt_link1", $rOpt_timeout) || goto error;
+    rCommand("no ipv6 address", $rOpt_timeout) || goto error;
+    rCommand("exit", $rOpt_timeout) || goto error;
+    #
+    rCommand("exit", $rOpt_timeout) || goto error;
+
+    return(1);
+
+error:
+    return(0);
+}
+
+#
+sub cisco_start_dhcp6c()
+{
+    rCommand("configure terminal", $rOpt_timeout) || goto error;
+    #
+    # set prefix delegation interface
+    #
+    rCommand("interface $rOpt_link0", $rOpt_timeout) || goto error;
+    if($rapidcommit){
+        rCommand("ipv6 dhcp client pd PDTEST rapid-commit", $rOpt_timeout) || goto error;
+    }
+    rCommand("ipv6 dhcp client pd PDTEST", $rOpt_timeout) || goto error;
+    rCommand("exit", $rOpt_timeout) || goto error;
+    #
+    # set down-stream side interface
+    #
+    rCommand("interface $rOpt_link1", $rOpt_timeout) || goto error;
+    rCommand("ipv6 address PDTEST 0:0:0:1::/64 eui-64", $rOpt_timeout) || goto error;
+    rCommand("exit", $rOpt_timeout) || goto error;
+    #
+    rCommand("exit", $rOpt_timeout) || goto error;
+
+    return(1);
+
+error:
+    return(0);
+}
+
+########################################################################
+__END__
+
+=head1 NAME
+
+B<dhcp6c.rmt> - /start/stop/release dhcp client
+
+=head1 SYNOPSIS
+
+B<dhcp6c.rmt> [-commonoption ...] start [rapidcommit]
+              link0=LINK0_DEV link1=LINK1_DEV
+              [timeout=SEC_VALUE]
+
+B<dhcp6c.rmt> [-commonoption ...] stop
+
+B<dhcp6c.rmt> [-commonoption ...] release
+
+=head1 DESCRIPTION
+
+B<dhcp6c.rmt start> starts dhcp client process associating iapd.
+B<dhcp6c.rmt start rapidcommit> starts dhcp client process using rapid commit option.
+B<dhcp6c.rmt stop> stop dhcp client process.
+B<dhcp6c.rmt release> release delegated prefix information.
+
+=head1 RETURN VALUES
+
+B<dhcp6c.rmt> exits with one of the following values:
+ 0      command completed successfully
+ not 0  command failed
+
+=head1 BUGS
+
+Although this remote file B<dhcp6c.rmt> is for cisco ios, it is not tried on the system yet.
+
+=cut
+

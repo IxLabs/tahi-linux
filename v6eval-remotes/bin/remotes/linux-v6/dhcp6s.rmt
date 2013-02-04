@@ -1,0 +1,354 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 2003 Yokogawa Electric Corporation , 
+# INTAP(Interoperability Technology Association for Information 
+# Processing, Japan) , IPA (Information-technology Promotion Agency,Japan)
+# Copyright (C) IBM Corporation 2003.
+# All rights reserved.
+#
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+#
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+#
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+#
+#
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+#    Author: Kazuo Hiekata <hiekata@yamato.ibm.com>
+#
+########################################################################
+use V6evalRemote;
+
+rOpen() || goto error;
+$system=rType();
+
+#
+$type=$V6evalTool::NutDef{Type};
+if($type eq router) {
+    if($rOpt_Start && !$rOpt_link0 && !$rOpt_link1) {
+        print STDERR "Specify link0=XXX and/or link1=XXX\n";
+        goto error;
+    }
+}
+else{
+    if($rOpt_Start && !$rOpt_link0) {
+        print STDERR "Specify link0=XXX\n";
+        goto error;
+    }
+}
+#
+$rOpt_timeout=5 if ! defined($rOpt_timeout);
+
+#Included option
+##Rapid Commit option 
+if (defined($rOpt_rapidcommit)){
+   $rOpt_rapidcommit="allow\ rapid-commit";
+} else{
+   $rOpt_rapidcommit="\#";
+}
+
+# Preference options
+if (defined($rOpt_preference)){
+   $rOpt_preference="server-preference\ $rOpt_preference";
+} else{
+   $rOpt_preference="\#";
+}
+
+# Other options
+if (defined($rOpt_sendoptions)){
+   $rOpt_sendoptions="send\ $rOpt_sendoptions";
+}
+else{
+   $rOpt_sendoptions="\#";
+}
+if (defined($rOpt_allowoptions)){
+   $rOpt_allowoptions="allow\ $rOpt_allowoptions";
+}
+else{
+   $rOpt_allowoptions="\#";
+}
+
+#Start DCHPv6 server process case
+if($rOpt_start) {
+   ## delegate prefix
+   if (defined($rOpt_delegateprefix)){
+      $rOpt_delegateprefix="prefix\ $rOpt_delegateprefix";
+      if (defined($rOpt_length)){
+          $rOpt_delegateprefix="$rOpt_delegateprefix/$rOpt_length";
+      }
+      else{
+          $rOpt_delegateprefix="$rOpt_delegateprefix/48";
+      }
+      $rOpt_addresses = "\#";
+   ## range of addresses
+   } elsif (defined($rOpt_startaddr) && defined($rOpt_endaddr) ){
+      $rOpt_addresses="range $rOpt_startaddr to $rOpt_endaddr/64";
+      $rOpt_delegateprefix = "\#";
+   } elsif (defined($rOpt_dns)){
+      $rOpt_addresses = "\#";
+      $rOpt_delegateprefix = "\#";
+   } else {
+      print STDERR "prefix, address or dns must be required\n";
+      goto error;
+   }
+
+  ## dns servers 
+  if (defined($rOpt_dns)){
+        $rOpt_dns="send dns_servers $rOpt_dns";
+  } else{
+     $rOpt_dns="\#";
+  }
+
+   ## preferred lifetime of delegate prefix
+   if (defined($rOpt_preferredlifetime)){
+      $rOpt_preferredlifetime="prefer-life-time $rOpt_preferredlifetime";
+   }
+   else{
+      $rOpt_preferredlifetime="prefer-life-time 10000";
+   }
+
+   ## valid lifetime of delegate prefix
+   if (defined($rOpt_validlifetime)){
+      $rOpt_validlifetime="valid-life-time $rOpt_validlifetime";
+   }
+   else{
+      $rOpt_validlifetime="valid-life-time 20000";
+   }
+   ## renew time of delegate prefix
+   if (defined($rOpt_renewtime)){
+      $rOpt_renewtime="renew-time $rOpt_renewtime";
+   }
+   else{
+      $rOpt_renewtime="renew-time 5000";
+   }
+   ## rebind time of delegate prefix
+   if (defined($rOpt_rebindtime)){
+      $rOpt_rebindtime="rebind-time $rOpt_rebindtime";
+   }
+   else{
+      $rOpt_rebindtime="rebind-time 16000";
+   }
+}
+
+#
+$dhcp6s_tmpl="$system".".dhcp6s.tmpl";
+$dhcp6s_conf="$system".".dhcp6s.conf";
+$dhcp6s_rmt="/tmp/dhcp6s.conf";
+$put_timeout=180;
+#
+if ($V6evalRemote::debug){
+    $dhcp6s_cmd="/usr/local/sbin/dhcp6s -D";
+}
+else{
+    $dhcp6s_cmd="/usr/local/sbin/dhcp6s";
+}
+#
+$ifconfig_cmd="/usr/local/sbin/ifconfig";
+
+#
+rLogin($rOpt_timeout) || goto error;
+linux_dhcp6s() || goto error;
+rLogout($rOpt_timeout) || goto error;
+
+rClose();
+exit($V6evalRemote::exitPass);
+
+error:
+    rClose();
+    exit($V6evalRemote::exitFail);
+
+notsupported:
+    rClose();
+    exit($V6evalRemote::exitNS);
+
+########################################################################
+sub linux_dhcp6s()
+{
+    if($rOpt_start) {
+	linux_mkconf() || goto error;
+	linux_kill_dhcp6s() || goto error;
+	linux_start_dhcp6s() || goto error;
+    } elsif($rOpt_set) {
+	linux_mkconf() || goto error;
+	linux_kill_dhcp6s() || goto error;
+    } elsif($rOpt_stop) {
+	linux_kill_dhcp6s() || goto error;
+    } elsif($rOpt_release) {
+	linux_release_dhcp6s() || goto error;
+    } elsif($rOpt_Link) {
+	linux_link_dhcp6s() || goto error;
+    } else {
+	print "Nothing happed. Please specify start/stop.\n";
+    }
+    return(1);
+
+error:
+    return(0);
+}
+
+#
+sub linux_mkconf()
+{
+    print "Make dhcp6s.conf\n" if $V6evalRemote::debug;
+    if(open(IN, "$dhcp6s_tmpl") == 0) {
+	print STDERR "$dhcp6s_tmpl: $!\n";
+	goto error;
+    }
+    if(open(OUT, "> $dhcp6s_conf") == 0) {
+	print STDERR "$dhcp6s_conf: $!\n";
+	goto error;
+    }
+    my $conffile = "";
+    while(<IN>) {
+	s/LINK0/$rOpt_link0/;
+	s/LINK1/$rOpt_link1/;
+	#
+        s/RAPIDCOMMIT/$rOpt_rapidcommit/;
+        s/PREFERENCE/$rOpt_preference/;
+	#
+	s/DUID/duid $rOpt_duid/;
+	s/PREFIX/$rOpt_delegateprefix/;
+	s/ADDRESSES/$rOpt_addresses/;
+	s/PREFERREDLIFETIME/$rOpt_preferredlifetime/;
+	s/VALIDLIFETIME/$rOpt_validlifetime/;
+	s/RENEWTIME/$rOpt_renewtime/;
+	s/REBINDTIME/$rOpt_rebindtime/;
+	s/DNS/$rOpt_dns/;
+	s/SENDOPTIONS/$rOpt_sendoptions/;
+	s/ALLOWOPTIONS/$rOpt_allowoptions/;
+	s/PREFERENCE/$rOpt_preference/;
+	#
+	#
+	print STDERR $_ if $V6evalRemote::debug;
+	print OUT $_;
+        $conffile .= $_;
+    }
+    close(IN);
+    close(OUT);
+
+    print "Put local:$dhcp6s_conf to remote:$dhcp6_rmt\n"
+	if $V6evalRemote::debug;
+    my $cmd = "/bin/echo \"".$conffile."\" > ".$dhcp6s_rmt;
+    rCommand($cmd, $timeout);
+    return(1);
+
+error:
+    return(0);
+}
+
+sub linux_link_dhcp6s()
+{
+    #
+    # up/down prefix delegation interface
+    #
+    if($rOpt_up) {
+	rCommand("$ifconfig_cmd $rOpt_link0 up", $rOpt_timeout) || goto error;
+    } else {
+	rCommand("$ifconfig_cmd $rOpt_link0 down", $rOpt_timeout) || goto error;
+    }
+    #
+    return(1);
+
+error:
+    return(0);
+}
+
+#
+sub linux_kill_dhcp6s()
+{
+    my(@lines);
+    my($pid)=0;
+
+    rCommand("rm -f /var/lib/dhcpv6/*", $timeout) || goto error;
+    rCommand("ps ax", $timeout) || goto error;
+    @lines=rCmdOutput();
+    shift(@lines); # remove command line
+    pop(@lines);   # remove command prompt
+    foreach(@lines) {
+	if(/^\s*(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+dhcp6s)/) {
+	    #
+	    # ps ax
+	    # 300  p1  I+     0:00.14 /usr/local/v6/sbin/dhcp6s -c dhcp6s.conf fxp0
+	    #
+	    $pid=$1;
+	}
+    }
+    if($pid) {
+	print "Kill current dhcp6s (pid=$pid)\n" if $V6evalRemote::debug;
+	rCommand("kill $pid", $timeout) || goto error;
+    }
+    return(1);
+
+error:
+    return(0);
+}
+
+#
+sub linux_release_dhcp6s()
+{
+    my(@lines);
+    my($pid)=0;
+
+    rCommand("ps ax", $timeout) || goto error;
+    @lines=rCmdOutput();
+    shift(@lines); # remove command line
+    pop(@lines);   # remove command prompt
+    foreach(@lines) {
+	if(/^\s*(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+dhcp6s)/) {
+	    #
+	    # ps ax
+	    # 300  p1  I+     0:00.14 /usr/local/v6/sbin/dhcp6s -c dhcp6s.conf fxp0
+	    #
+	    $pid=$1;
+	}
+    }
+    if($pid) {
+	print "Kill SIGTERM current dhcp6s (pid=$pid)\n" if $V6evalRemote::debug;
+	rCommand("kill -TERM $pid", $timeout) || goto error;
+    }
+    return(1);
+
+error:
+    return(0);
+}
+
+#
+sub linux_start_dhcp6s()
+{
+    print "Start dhcp6s\n" if $V6evalRemote::debug;
+    if(rCommand("$dhcp6s_cmd -c $dhcp6s_rmt ".
+		"$rOpt_link0", $timeout) != 1) {
+	return(0);
+    }
+    return(1);
+}
+
+########################################################################

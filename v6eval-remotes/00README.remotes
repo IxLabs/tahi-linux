@@ -1,0 +1,48 @@
+                       README of Remote Control Script
+
+                                TAHI Project
+
+                        $Date: 2004/03/31 06:04:58 $
+
+O: worked
+X: not worked
+-: not tested
+?: unknown
+
+System           | target version               | host | router | author
+-----------------+------------------------------+------+--------+-----------------
+aix              | AIX 4.3.3                    | O    | ?      | TIPSTER6 project
+cisco-ios        | IOS 12.2_8_T                 | ?    | O      | TAHI Project
+freebsd-i386     | FreeBSD 4.9-RELEASE          | O    | O      | TAHI Project
+freebsd43-i386   | FreeBSD 4.3-RELEASE          | ?    | ?      | TAHI Project
+hitachi-gr2k     | 06-02-/A                     | ?    | O      | TAHI Project
+hitachi-nr60     | ?                            | ?    | ?      | TAHI Project
+hitachi-nr60-v2  | ?                            | ?    | ?      | TAHI Project
+hpux             | HP-UX B.11.11                | ?    | ?      | Anthony Galan
+iij-seil         | ?                            | ?    | ?      | TAHI Project
+iij-seil-neu     | ?                            | ?    | ?      | TAHI Project
+kame-freebsd     | kame-20040329-freebsd49-snap | O    | O      | TAHI Project
+kame-netbsd-i386 | kame-20011015-netbsd152-snap | O    | O      | TAHI Project
+lcna             | ?                            | ?    | ?      | TAHI Project
+linux-v6         | ?                            | ?    | ?      | TAHI Project
+manual           | N/A                          | O    | O      | TAHI Project
+mgcs-sj6         | ?                            | ?    | ?      | TAHI Project
+mipl             | ?                            | ?    | ?      | Linux Technology Center, IBM
+ms-win2k         | ?                            | ?    | ?      | TAHI Project
+nec-ix1k         | ?                            | O    | O      | NEC Corporation
+nec-libra        | ?                            | ?    | ?      | TAHI Project
+nec-libra-utcpip | ?                            | ?    | ?      | TAHI Project
+nec-mip6         | necmip6-20010911-snap        | O    | O      | TAHI Project
+netbsd-i386      | NetBSD 1.5.2                 | O    | O      | TAHI Project
+openbsd-i386     | OpenBSD 3.0                  | O    | O      | TAHI Project
+sfc-mip6         | cvs at 2001.04.16 11:00 AM   | -    | O      | TAHI Project
+sun-solaris      | Solaris 8 (SunOS 5.8)        | O    | -      | TAHI Project
+telebit-tbc2k    | telebit-tbc2k Release 2v6    | -    | O      | Ericsson Telebit
+unitedlinux      | unitedlinux SP2a             | ?    | ?      | Linux Technology Center, IBM
+usagi-i386       | ?                            | ?    | ?      | USAGI Project
+                 |                              |      |        | Linux Technology Center, IBM
+                 |                              |      |        | TAHI Project
+usagi24-i386     | ?                            | O    | O      | USAGI Project
+                 |                              |      |        | Linux Technology Center, IBM
+                 |                              |      |        | TAHI Project
+yamaha-ws-one    | ?                            | ?    | ?      | TAHI Project

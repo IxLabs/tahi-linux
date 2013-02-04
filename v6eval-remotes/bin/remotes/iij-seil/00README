@@ -1,0 +1,62 @@
+				README
+
+			      TAHI Project
+
+			$Date: 2000/07/21 05:24:45 $
+
+Network Configration
+
+	Link0
+	---------+------------------------+-------
+		 |			  |
+		 |			  | hu0=3ffe:501:ffff:100+EUI64/64
+		+--+	Serial		+------+
+		|TN|--------------------|SIEL#1| default route=si0
+		+--+			+------+
+		 |			  | si0  
+		 |			  |
+		 |			  | T1 cable (cross)
+		 |			  |
+		 |			  | si0
+		 |			+------+
+		 |			|SIEL#2| default route=si0
+		 |			+------+
+		 |			  | hu0=3ffe:501:fff:101+EUI54/64
+		 |			  |
+	---------+------------------------+-------
+	Link1
+
+Test System Customization
+
+	Change HOP_LIMIT_AFTER macro value from 63 to 62
+	of the following files:
+	- ct/spec/PingOverRouter.def
+	- ct/tunnel/hoplimit.def
+
+Sample Configurations
+
+SEIL#1
+===========================================================
+> ipv6 0 route6dflags=NO
+> ipv6 1 rtadvdflags=NO
+> ipv6 2 iface=hu0
+> ipv6 3 addr_hu0=3ffe:501:ffff:100:2e0:4dff:fe03:46
+===========================================================
+
+	NOTE:	Current SEIL's configration does not accept static route.
+		So reboot.rmt executed "route add -net default ..."
+		command after rebooting. It is very quick hack to be fixed.
+
+SEIL#2
+===========================================================
+# ipv6 0 route6dflags=NO
+# ipv6 1 rtadvdflags=NO
+# ipv6 2 iface=hu0
+# ipv6 3 addr_hu0=3ffe:501:ffff:100:2e0:4dff:fe03:40
+!sh
+% route add -net6 default fe80::2e0:4dff:fe03:40%si0
+===========================================================
+
+	NOTE:	SEIL#2 does not heve to reboot whie testing.
+
+							[end of README]

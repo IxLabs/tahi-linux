@@ -1,0 +1,243 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/usagi24-i386/rtadvd.rmt,v 1.1 2004/03/24 08:07:36 kenta Exp $
+# $Id: rtadvd.rmt,v 1.1 2004/03/24 08:07:36 kenta Exp $
+#
+########################################################################
+use V6evalRemote;
+
+rOpen() || goto error;
+$type=rType();
+
+#
+if($rOpt_Start && !$rOpt_link0 && !$rOpt_link1) {
+    print STDERR "Specify link0=XXX and/or link1=XXX\n";
+    goto error;
+}
+
+#
+$rOpt_timeout=5
+    if ! defined($rOpt_timeout);
+#
+$rOpt_maxinterval=600
+    if ! defined($rOpt_maxinterval);
+$rOpt_mininterval=$rOpt_maxinterval*0.33
+    if ! defined($rOpt_mininterval);
+
+#
+$rOpt_chlim=64
+    if ! defined($rOpt_chlim);
+$rOpt_raflag=0
+    if ! defined($rOpt_raflag);
+$rOpt_rltime=$rOpt_maxinterval*3
+    if ! defined($rOpt_rltime);
+$rOpt_rtime=0
+    if ! defined($rOpt_rtime);
+$rOpt_retrans=0
+    if ! defined($rOpt_retrans);
+#
+$rOpt_pinfoflags=192
+    if ! defined($rOpt_pinfoflags);
+$rOpt_vltime=2592000
+    if ! defined($rOpt_vltime);
+$rOpt_pltime=604800
+    if ! defined($rOpt_pltime);
+#
+$rOpt_mtu=1500
+    if ! defined($rOpt_mtu);
+
+#
+$rtadv_tmpl="$type".".rtadvd.tmpl";
+$rtadv_conf="$type".".rtadvd.conf";
+$rtadv_rmt="/tmp/rtadvd.conf";
+$rtadv_pid="/var/run/rtadvd.pid";
+$put_timeout=180;
+
+#
+rLogin($rOpt_timeout) || goto error;
+rtadvd() || goto error;
+rLogout($rOpt_timeout) || goto error;
+
+rClose();
+exit($V6evalRemote::exitPass);
+
+error:
+    rClose();
+    exit($V6evalRemote::exitFail);
+
+########################################################################
+sub rtadvd()
+{
+    if($rOpt_start) {
+	mkconf() || goto error;
+	kill_rtadvd() || goto error;
+	start_rtadvd() || goto error;
+    } elsif($rOpt_stop) {
+	kill_rtadvd() || goto error;
+    } else {
+	print "Nothing happed. Please specify start/stop.\n";
+    }
+    return(1);
+
+error:
+    return(0);
+}
+
+#
+sub mkconf()
+{
+    print "Make radvd.conf\n" if $V6evalRemote::debug;
+    if(open(IN, "$rtadv_tmpl") == 0) {
+	print STDERR "$rtadv_tmpl: $!\n";
+	goto error;
+    }
+    if(open(OUT, "> $rtadv_conf") == 0) {
+	print STDERR "$rtadv_conf: $!\n";
+	goto error;
+    }
+    my($manflag)="off";
+    my($othconfflag)="off";
+    if($rOpt_raflag == 0) {
+	$manflag="off";
+	$othconfflag="off";
+    } elsif ($rOpt_raflag == 64) {
+	$manflag="off";
+	$othconfflag="on";
+    } elsif ($rOpt_raflag == 128) {
+	$manflag="on";
+	$othconfflag="off";
+    } elsif ($rOpt_raflag == 192) {
+	$manflag="on";
+	$othconfflag="on";
+    } else {
+	print "Bat value: rOpt_raflag=$rOpt_raflag.\n";
+	return(0);
+    }
+    my($onlinkflag)="on";
+    my($autoflag)="on";
+    if($rOpt_pinfoflags == 0) {
+	$onlinkflag="off";
+	$autoflag="off";
+    } elsif ($rOpt_pinfoflags == 64 ) {
+	$onlinkflag="off";
+	$autoflag="on";
+    } elsif ($rOpt_pinfoflags == 128 ) {
+	$onlinkflag="on";
+	$autoflag="off";
+    } elsif ($rOpt_pinfoflags == 192 ) {
+	$onlinkflag="on";
+	$autoflag="on";
+    } else {
+	print "Bat value: rOpt_pinfoflags=$rOpt_pinfoflags.\n";
+	return(0);
+    }
+    my($advsend0)="on";
+    my($advsend1)="on";
+    if(!$rOpt_link0) {
+	$rOpt_link0="eth0";
+	$advsend0="off";
+    }
+    if(!$rOpt_link1) {
+	$rOpt_link1="eth1";
+	$advsend1="off";
+    }
+    while(<IN>) {
+	s/LINK0/$rOpt_link0/;
+	s/LINK1/$rOpt_link1/;
+	s/ADVSEND0/AdvSendAdvert $advsend0/;
+	s/ADVSEND1/AdvSendAdvert $advsend1/;
+	#
+	s/MAXINTERVAL/MaxRtrAdvInterval $rOpt_maxinterval/;
+	s/MININTERVAL/MinRtrAdvInterval $rOpt_mininterval/;
+	s/CHLIM/AdvCurHopLimit $rOpt_chlim/;
+	s/MANFLAG/AdvManagedFlag $manflag/;
+	s/OTHCONFFLAG/AdvOtherConfigFlag $othconfflag/;
+	s/RLTIME/AdvDefaultLifetime $rOpt_rltime/;
+	s/RTIME/AdvReachableTime $rOpt_rtime/;
+	s/RETRANS/AdvRetransTimer $rOpt_retrans/;
+	#
+	s/ONLINKFLAG/AdvOnLink $onlinkflag/;
+	s/AUTOFLAG/AdvAutonomous $autoflag/;
+	s/VLTIME/AdvValidLifetime $rOpt_vltime/;
+	s/PLTIME/AdvPreferredLifetime $rOpt_pltime/;
+	#
+	s/MTU/AdvLinkMTU $rOpt_mtu/;
+	#
+	print STDERR $_ if $V6evalRemote::debug;
+	print OUT $_;
+    }
+    close(IN);
+    close(OUT);
+
+    print "Put local:$rtadv_conf to remote:$rtadv_rmt\n"
+	if $V6evalRemote::debug;
+    rPutfile($rtadv_conf, $rtadv_rmt, $put_timeout) || goto error;
+    return(1);
+
+error:
+    return(0);
+}
+
+#
+sub kill_rtadvd
+{
+    if(rCommand("test -f $rtadv_pid", $timeout) == 1) {
+	print "Kill current radvd\n" if $V6evalRemote::debug;
+	if(rCommand("kill `cat $rtadv_pid`", $timeout) != 1) {
+	    return(0);
+	}
+    }
+    return(1);
+}
+
+#
+sub start_rtadvd()
+{
+    print "Start radvd\n" if $V6evalRemote::debug;
+    if(rCommand("/usr/local/v6/sbin/radvd -C $rtadv_rmt ", $timeout) != 1) {
+	return(0);
+    }
+    return(1);
+}
+
+########################################################################

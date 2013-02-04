@@ -1,0 +1,154 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/telebit-tbc2k/rtadvd.rmt,v 1.6 2003/01/27 05:55:22 akisada Exp $
+#
+################################################################
+
+use V6evalRemote;
+
+rOpen() || goto error;
+
+my($link0prefix) = "3ffe:501:ffff:100::";
+my($link1prefix) = "3ffe:501:ffff:101::";
+
+$type=rType();
+
+#
+if($rOpt_Start && !$rOpt_link0 && !$rOpt_link1) {
+    print STDERR "Specify link0=XXX and/or link1=XXX\n";
+    goto error;
+}
+
+#
+$rOpt_timeout=30
+    if ! defined($rOpt_timeout);
+#
+$rOpt_maxinterval=600
+    if ! defined($rOpt_maxinterval);
+$rOpt_mininterval=$rOpt_maxinterval*0.33
+    if ! defined($rOpt_mininterval);
+
+#
+$rOpt_chlim=64
+    if ! defined($rOpt_chlim);
+$rOpt_raflag=0
+    if ! defined($rOpt_raflag);
+$rOpt_rltime=$rOpt_maxinterval*3
+    if ! defined($rOpt_rltime);
+$rOpt_rtime=0
+    if ! defined($rOpt_rtime);
+$rOpt_retrans=0
+    if ! defined($rOpt_retrans);
+#
+$rOpt_pinfoflags=192
+    if ! defined($rOpt_pinfoflags);
+$rOpt_vltime=2592000
+    if ! defined($rOpt_vltime);
+$rOpt_pltime=604800
+    if ! defined($rOpt_pltime);
+#
+$rOpt_mtu=1500
+    if ! defined($rOpt_mtu);
+
+#
+$rtadv_tmpl="$type".".rtadvd.tmpl";
+$rtadv_conf="$type".".rtadvd.conf";
+$rtadv_rmt="/tmp/rtadvd.conf";
+$put_timeout=180;
+
+#
+rLogin($rOpt_timeout) || goto error;
+rtadvd() || goto error;
+rLogout($rOpt_timeout) || goto error;
+
+rClose();
+exit($V6evalRemote::exitPass);
+
+error:
+    rClose();
+    exit($V6evalRemote::exitFail);
+
+########################################################################
+sub rtadvd()
+{
+    my $options = "";
+    if($rOpt_start) {
+        # $rOpt_pinfoflags and $rOpt_raflags not used
+	my $maxinterval = $rOpt_maxinterval * 1000; # Need the time in milliseconds
+	my $mininterval = $rOpt_mininterval * 1000; # Need the time in milliseconds
+	my $lifetime = $rOpt_rltime * 1000;         # Need the time in milliseconds
+	$options = "-send-router-advert 1 \\\r".
+                   "-max-rtr-adv-interval $maxinterval \\\r".
+	           "-min-rtr-adv-interval $mininterval \\\r".
+	           "-maximum-hop-limit $rOpt_chlim \\\r".
+		   "-rtr-adv-lifetime $lifetime \\\r".
+	           "-adv-reachable-time $rOpt_rtime \\\r".
+	           "-retrans-timer $rOpt_retrans \\\r".
+	           "-valid-lifetime $rOpt_vltime \\\r".
+		   "-preferred-lifetime $rOpt_pltime \\\r".
+		   "-mtu $rOpt_mtu";
+    } elsif($rOpt_stop) {
+    } else {
+	print "Nothing happed. Please specify start/stop.\n";
+        goto error;
+    }
+
+    # link0
+    rCommand("show ip access link0",$rOpt_timeout);
+    rCommand("stop ip",$rOpt_timeout);
+    rCommand("no ip access",$rOpt_timeout);
+    rCommand("ip access link0 -local $link0prefix $options", $rOpt_timeout);
+    rCommand("ip laninterface",$rOpt_timeout);
+    # link1
+    rCommand("show ip access link1",$rOpt_timeout);
+    rCommand("stop ip",$rOpt_timeout);
+    rCommand("no ip access",$rOpt_timeout);
+    rCommand("ip access link1 -local $link1prefix $options", $rOpt_timeout);
+    rCommand("ip laninterface",$rOpt_timeout);
+    return(1);
+
+error:
+    return(0);
+}
+
+################################################################

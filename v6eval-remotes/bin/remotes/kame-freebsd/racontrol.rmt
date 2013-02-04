@@ -1,0 +1,352 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/kame-freebsd/racontrol.rmt,v 1.6 2005/05/09 09:35:22 akisada Exp $
+#
+########################################################################
+
+use V6evalRemote;
+
+# available options
+#     $rOpt_timeout    : seconds
+#     $rOpt_mode       : start, stop
+#     $rOpt_link0      : interface
+#     $rOpt_link1      : interface
+#     $rOpt_maxinterval: seconds
+#     $rOpt_mininterval: seconds
+#     $rOpt_chlim      : current hoplimit
+#     $rOpt_mtu        : link mtu
+#     $rOpt_rltime     : router lifetime (sec)
+#     $rOpt_rtime      : reachable time (msec)
+#     $rOpt_retrans    : retrans timer (msec)
+#     $rOpt_vltime     : valid lifetime for prefix(es)
+#     $rOpt_pltime     : preferred lifetime for prefix(es)
+#     $rOpt_mipv6      : Enables mobile IPv6 support
+#     $rOpt_hapref     : Home Agent Preference
+#     $rOpt_hatime     : Home Agent Lifetime
+
+$rtadvd='/usr/local/v6/sbin/rtadvd';
+$configfile='/tmp/rtadvd.conf';
+
+unless($rOpt_timeout) {
+	$rOpt_timeout = 5;
+}
+
+unless(rOpen()) {
+	exit($V6evalRemote::exitFail);
+}
+
+if(RaControlMain() < 0) {
+	rClose();
+	exit($V6evalRemote::exitFail);
+}
+
+rClose();
+exit($V6evalRemote::exitPass);
+
+
+
+#------------------------------#
+# RaControlMain                #
+#------------------------------#
+sub
+RaControlMain()
+{
+	my @interfaces = ();
+
+	if(ParseOptions(\@interfaces) < 0) {
+		return(-1);
+	}
+
+	unless(rLogin($rOpt_timeout)) {
+		return(-1);
+	}
+
+	for( ; ; ) {
+		if($rOpt_mode eq 'start') {
+			my $cmd = '';
+			my $mipv6 = defined($rOpt_mipv6)? '-m': '';
+
+			rCommand("rm -f $configfile", $rOpt_timeout);
+
+			if(ConfigControl(\$cmd)) {
+				rCommand($cmd, $rOpt_timeout);
+				rCommand("cat $configfile", $rOpt_timeout);
+
+				rCommand("$rtadvd $mipv6 ".
+					"-c $configfile @interfaces",
+					$rOpt_timeout);
+			} else {
+				rCommand("$rtadvd $mipv6 @interfaces",
+					$rOpt_timeout);
+			}
+
+			last;
+		}
+
+		if($rOpt_mode eq 'stop') {
+			rCommand('killall rtadvd', $rOpt_timeout);
+			rCommand("rm -f $configfile", $rOpt_timeout);
+			last;
+		}
+
+		last;
+	}
+
+	unless(rLogout($rOpt_timeout)) {
+		return(-1);
+	}
+
+	return(0);
+}
+
+
+
+#------------------------------#
+# ParseOptions                 #
+#------------------------------#
+sub
+ParseOptions($)
+{
+	my ($interfaces) = @_;
+
+	# $rOpt_mode
+	unless(($rOpt_mode eq 'start') || ($rOpt_mode eq 'stop')) {
+		print STDERR "unknown mode -- $rOpt_mode\n";
+		return(-1);
+	}
+
+	# $rOpt_link0, $rOpt_link1
+	if($rOpt_mode eq 'start') {
+		unless(($rOpt_link0) || ($rOpt_link1)) {
+			print STDERR 'at least, '.
+				"one interface must be specified\n";
+			return(-1);
+		}
+
+		if($rOpt_link0) {
+			push(@$interfaces, $rOpt_link0);
+		}
+
+		if($rOpt_link1) {
+			push(@$interfaces, $rOpt_link1);
+		}
+	}
+
+	return(0);
+}
+
+#------------------------------#
+# ConfigControl                #
+#------------------------------#
+sub
+ConfigControl($)
+{
+	my ($cmd) = @_;
+
+	my $bool = 0;
+
+	if(defined($rOpt_maxinterval)) {
+		$bool ++;
+	}
+
+	if(defined($rOpt_mininterval)) {
+		$bool ++;
+	}
+
+	if(defined($rOpt_chlim)) {
+		$bool ++;
+	}
+
+	if(defined($rOpt_rltime)) {
+		$bool ++;
+	}
+
+	if(defined($rOpt_rtime)) {
+		$bool ++;
+	}
+
+	if(defined($rOpt_retrans)) {
+		$bool ++;
+	}
+
+	if(defined($rOpt_vltime)) {
+		$bool ++;
+	}
+
+	if(defined($rOpt_pltime)) {
+		$bool ++;
+	}
+
+	if(defined($rOpt_mtu)) {
+		$bool ++;
+	}
+
+	if(defined($rOpt_hapref)) {
+		$bool ++;
+	}
+
+	if(defined($rOpt_hatime)) {
+		$bool ++;
+	}
+
+	if($bool) {
+		my $add = 0;
+
+		$$cmd  = "cat > $configfile << EOF\r";
+		$$cmd .= "default:\\\r";
+
+		if(defined($rOpt_maxinterval)) {
+			if($add) {
+				$$cmd .= "\\\r";
+			}
+
+			$$cmd .= "\t:maxinterval#$rOpt_maxinterval:";
+			$add ++;
+		}
+
+		if(defined($rOpt_mininterval)) {
+			if($add) {
+				$$cmd .= "\\\r";
+			}
+
+			$$cmd .= "\t:mininterval#$rOpt_mininterval:";
+			$add ++;
+		}
+
+		if(defined($rOpt_chlim)) {
+			if($add) {
+				$$cmd .= "\\\r";
+			}
+
+			$$cmd .= "\t:chlim#$rOpt_chlim:";
+			$add ++;
+		}
+
+		if(defined($rOpt_rltime)) {
+			if($add) {
+				$$cmd .= "\\\r";
+			}
+
+			$$cmd .= "\t:rltime#$rOpt_rltime:";
+			$add ++;
+		}
+
+		if(defined($rOpt_rtime)) {
+			if($add) {
+				$$cmd .= "\\\r";
+			}
+
+			$$cmd .= "\t:rtime#$rOpt_rtime:";
+			$add ++;
+		}
+
+		if(defined($rOpt_retrans)) {
+			if($add) {
+				$$cmd .= "\\\r"
+			}
+
+			$$cmd .= "\t:rtime#$rOpt_retrans:";
+			$add ++;
+		}
+
+		if(defined($rOpt_vltime)) {
+			if($add) {
+				$$cmd .= "\\\r"
+			}
+
+			$$cmd .= "\t:vltime#$rOpt_vltime:";
+			$add++;
+		}
+
+		if(defined($rOpt_pltime)) {
+			if($add) {
+				$$cmd .= "\\\r"
+			}
+
+			$$cmd .= "\t:pltime#$rOpt_pltime:";
+			$add++;
+		}
+
+		if(defined($rOpt_hapref)) {
+			if($add) {
+				$$cmd .= "\\\r";
+			}
+
+			$$cmd .= "\t:hapref#$rOpt_hapref:";
+			$add ++;
+		}
+
+		if(defined($rOpt_hatime)) {
+			if($add) {
+				$$cmd .= "\\\r";
+			}
+
+			$$cmd .= "\t:hatime#$rOpt_hatime:";
+			$add ++;
+		}
+
+		$$cmd .= "\r\r";
+
+		$$cmd .= "ether:\\\r";
+
+		if(defined($rOpt_mtu)) {
+			$$cmd .= "\t:mtu#$rOpt_mtu";
+		}
+
+		$$cmd .= ":tc=default:\r\r";
+
+		if(defined($rOpt_link0)) {
+			$$cmd .= "$rOpt_link0:\\\r";
+			$$cmd .= "\t:tc=ether:\r";
+		}
+
+		if(defined($rOpt_link1)) {
+			$$cmd .= "$rOpt_link1:\\\r";
+			$$cmd .= "\t:tc=ether:\r";
+		}
+
+		$$cmd .= "EOF\r";
+	}
+
+	return($bool);
+}

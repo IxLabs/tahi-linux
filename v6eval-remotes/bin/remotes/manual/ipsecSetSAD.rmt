@@ -1,0 +1,147 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/manual/ipsecSetSAD.rmt,v 1.13 2005/05/09 12:39:05 ozoe Exp $
+#
+########################################################################
+use V6evalRemote;
+use File::Basename;
+
+rArg() || goto error;
+
+my $basename	= basename($0, '.rmt');
+my $prompt	= "$basename> ";
+
+#$rOpt_timeout
+
+print "\n";
+print $prompt . "Set Security Association Database of NUT manually as following:\n\n";
+
+print $prompt . "src addr = $rOpt_src\n" if ($rOpt_src ne undef);
+print $prompt . "dst addr = $rOpt_dst\n" if ($rOpt_dst ne undef);
+print $prompt . "SPI      = $rOpt_spi\n" if ($rOpt_spi ne undef);
+print $prompt . "mode     = $rOpt_mode\n" if ($rOpt_mode ne undef);
+print $prompt . "direction = $rOpt_direction\n" if ($rOpt_direction ne undef);
+print $prompt . "protocol = $rOpt_protocol\n" if ($rOpt_protocol ne undef);
+print $prompt . "AH algorithm     = $rOpt_aalgo\n" if ($rOpt_aalgo ne undef);
+print $prompt . "AH algorithm Key = $rOpt_aalgokey\n" if ($rOpt_aalgokey ne undef);
+print $prompt . "ESP algorithm     = $rOpt_ealgo\n" if ($rOpt_ealgo ne undef);
+print $prompt . "ESP algorithm Key = $rOpt_ealgokey\n" if (($rOpt_ealgokey ne undef) && ($rOpt_ealgo ne 'null'));
+print $prompt . "ESP authentication     = $rOpt_eauth\n" if ($rOpt_eauth ne undef);
+print $prompt . "ESP authentication Key = $rOpt_eauthkey\n" if (($rOpt_eauthkey ne undef) && ($rOpt_eauth ne 'null'));
+print $prompt . "ESP padding = $rOpt_padding\n" if ($rOpt_padding ne undef);
+print $prompt . "anti-replay service = Enable\n" if ($rOpt_rsize ne undef);
+print $prompt . "replay windows size = $rOpt_rsize byte\n" if ($rOpt_rsize ne undef);
+print $prompt . "nsrc addr = $rOpt_nsrc\n" if ($rOpt_nsrc ne undef);
+print $prompt . "ndst addr = $rOpt_ndst\n" if ($rOpt_ndst ne undef);
+print $prompt . "hard life time duration of the SA = $rOpt_htime s\n" if ($rOpt_htime ne undef);
+print $prompt . "soft life time duration of the SA = $rOpt_stime s\n" if ($rOpt_stime ne undef);
+print "\n";
+print $prompt . "And this test is needed to map particular SA with SP\n\n" if ($rOpt_unique ne undef);
+print $prompt . "then press enter key.\a\n";
+<STDIN>;
+
+
+exit($V6evalRemote::exitPass);
+
+error:
+    exit($V6evalRemote::exitFAIL);
+
+########################################################################
+__END__
+
+=head1 NAME
+
+ipsecSetSAD.rmt - set security association database
+
+=head1 SYNOPSIS
+
+ipsecSetSAD.rmt [-commonoption ...] [parameter]
+
+parameter:
+
+src=source address
+
+dst=destination address
+
+spi=SPI
+
+mode={transport|tunnel}
+
+protocol={ah|esp|ah-esp}
+
+aalgo={hmac-md5|hmac-sha1}
+
+aalgokey=AH algorithm key
+
+ealgo={des-cbc|3des-cbc|null}
+
+ealgokey=ESP algorithm key
+
+eauth={hmac-md5|hmac-sha1|null}
+
+eauthkey=ESP authentication key
+
+padding={sequential|zero|random}
+
+nsrc=source VPN site address
+
+ndst=destination VPN site address
+
+
+=head1 DESCRIPTION
+
+B<ipsecSetSAD.rmt> adds security association database (SAD).
+Do ``perldoc V6evalRemote'' for common options.
+
+=head1 RETURN VALUES
+
+The B<ipsecSetSAD.rmt> exits with one of the following values:
+
+ 0  command completed successfully
+ 1  command failed
+
+=head1 SEE ALSO
+
+perldoc V6evalRemote
+
+=cut

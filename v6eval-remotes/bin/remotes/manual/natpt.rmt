@@ -1,0 +1,124 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/manual/natpt.rmt,v 1.6 2004/03/29 06:23:28 kenta Exp $
+#
+########################################################################
+use V6evalRemote;
+use File::Basename;
+
+rArg() || goto error;
+
+#$rOpt_if
+#$rOpt_addrfamily
+#$rOpt_direction
+#$rOpt_dstprefix
+#$rOpt_dstprefixlen
+#$rOpt_natprefix
+#$rOpt_natprefixlen
+
+#vRemote(
+#	"natpt.rmt",
+#	"if=$NUT_v4_filter_device ".
+#	"addrfamily=inet ".
+#	"direction=$Filter_Direction_v4 ".
+#	"dstprefix=$NUT_NATPT_V4_prefix ".
+#	"dstprefixlen=$NUT_NATPT_V4_prefixlen ".
+#	"natprefix=$NUT_NATPT_V6_prefix ".
+#	"natprefixlen=96 "
+#)
+my $basename	= basename($0, '.rmt');
+my $prompt	= "$basename> ";
+
+print "\n";
+
+print $prompt . "Enable and start NAT-PT function on NUT manually\n";
+print "\n";
+
+print $prompt . "if           = $rOpt_if\n";
+print $prompt . "addrfamily   = $rOpt_addrfamily\n";
+print $prompt . "direction    = $rOpt_direction\n";
+print $prompt . "dstprefix    = $rOpt_dstprefix\n";
+print $prompt . "dstprefixlen = $rOpt_dstprefixlen\n";
+print $prompt . "natprefix    = $rOpt_natprefix\n";
+print $prompt . "natprefixlen = $rOpt_natprefixlen\n";
+
+print "\n";
+print $prompt . "then press enter key.\a\n";
+<STDIN>;
+
+
+exit($V6evalRemote::exitPass);
+
+error:
+    exit($V6evalRemote::exitFAIL);
+
+########################################################################
+__END__
+
+=head1 NAME
+
+natpt.rmt - Enable and start NAT-PT function
+
+=head1 SYNOPSIS
+
+natpt.rmt [-commonoption ...]
+
+
+=head1 DESCRIPTION
+
+B<natpt.rmt> Enable and start NAT-PT function.
+
+Do ``perldoc V6evalRemote'' for common options.
+
+=head1 RETURN VALUES
+
+The B<mip6EnableCN.rmt> exits with one of the following values:
+
+ 0  command completed successfully
+ 1  command failed
+
+=head1 SEE ALSO
+
+perldoc V6evalRemote
+
+=cut

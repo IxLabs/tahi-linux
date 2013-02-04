@@ -1,0 +1,27 @@
+				README
+
+			      TAHI Project
+
+			$Date: 2002/01/29 10:25:17 $
+
+NOTE:
+ipsecSetS{A,P}D.rmt, ipsecClearAll.rmt, clearnc.rmt and ping6.rmt are including
+**UN-OFFICIAL COMMANDS**.
+The ping6.rmt can't be changed to use an official command.
+The "ping6" official command of SEIL has only one argument,
+"hostname (destination)".
+But our tool needs changing number of packets, data size, hoplimit and payload
+data.
+
+TODO:
+ipsecClearAll.rmt
+	- change to use "ipsec security-policy delete all" and 
+	  "ipsec security-association delete all"
+ipsecSetSAD.rmt
+	- change to use "ipsec security-association ..."
+ipsecSetSPD.rmt
+	- change to use "ipsec security-policy ..."
+clearnc.rmt
+	- change to use "clear ndp-cache" (need confirm)
+
+							[end of README]

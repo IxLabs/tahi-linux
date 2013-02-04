@@ -1,0 +1,134 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 Yokogawa Electric Corporation,
+# YDC Corporation, IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/manual/ipsecSetSPD.rmt,v 1.11 2005/05/09 09:35:22 akisada Exp $
+#
+########################################################################
+use V6evalRemote;
+use File::Basename;
+
+rArg() || goto error;
+
+#$rOpt_level
+
+my $basename	= basename($0, '.rmt');
+my $prompt	= "$basename> ";
+
+
+if($rOpt_protocol eq 'IPSEC_SA_BUNDLE'){
+    $rOpt_protocol = 'IPSEC_SA_BUNDLE:PROTO_IPSEC_AH+PROTO_IPSEC_ESP';
+}
+
+
+print "\n";
+print $prompt . "Set Security Policy Database of NUT manually as following:\n\n";
+print $prompt . "tunnel entry addr = $rOpt_tsrc\n" if ($rOpt_tsrc ne undef);
+print $prompt . "tunnel exit  addr = $rOpt_tdst\n" if ($rOpt_tdst ne undef);
+print $prompt . "src addr = $rOpt_src\n" if ($rOpt_src ne undef);
+print $prompt . "dst addr = $rOpt_dst\n" if ($rOpt_dst ne undef);
+print $prompt . "src port = $rOpt_sport\n" if ($rOpt_sport ne undef);
+print $prompt . "dst port = $rOpt_dport\n" if ($rOpt_dport ne undef);
+print $prompt . "mode       = $rOpt_mode\n" if ($rOpt_mode ne undef);
+print $prompt . "protocol   = $rOpt_protocol\n" if ($rOpt_protocol ne undef);
+print $prompt . "upper spec = $rOpt_upperspec\n" if ($rOpt_upperspec ne undef);
+print $prompt . "direction  = $rOpt_direction\n" if ($rOpt_direction ne undef);
+print $prompt . "policy     = $rOpt_policy\n" if ($rOpt_policy ne undef);
+print $prompt . "level      = $rOpt_level\n" if ($rOpt_level ne undef);
+print "\n";
+print $prompt . "level = unique means that this test is needed to map particular SA with SP\n\n" if ($rOpt_unique ne undef);
+print $prompt . "then press enter key.\a\n";
+<STDIN>;
+
+
+exit($V6evalRemote::exitPass);
+
+error:
+    exit($V6evalRemote::exitFAIL);
+
+########################################################################
+__END__
+
+=head1 NAME
+
+ipsecSetSPD.rmt - set security policy database
+
+=head1 SYNOPSIS
+
+ipsecSetSPD.rmt [-commonoption ...] [parameter]
+
+parameter:
+
+src=source address
+
+dst=destination address
+
+upperspec={any|tcp|udp} (default:any)
+
+direction={in|out}
+
+protocol={ah|esp|ah-esp}
+
+mode={transport|tunnel}
+
+policy={ipsec|none|discard} (default:ipsec)
+
+tsrc=tunnel entry address
+
+tdst=tunnel exit address
+
+=head1 DESCRIPTION
+
+B<ipsecSetSPD.rmt> adds security policy database (SPD).
+Do ``perldoc V6evalRemote'' for common options.
+
+=head1 RETURN VALUES
+
+The B<ipsecSetSPD.rmt> exits with one of the following values:
+
+ 0  command completed successfully
+ 1  command failed
+
+=head1 SEE ALSO
+
+perldoc V6evalRemote
+
+=cut
