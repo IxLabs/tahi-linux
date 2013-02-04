@@ -1,0 +1,480 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+# Yokogawa Electric Corporation, YDC Corporation,
+# IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/sample_stddef/tcp_handshake/tcp_handshake.seq,v 1.5 2003/10/10 10:19:59 akisada Exp $
+#
+
+BEGIN {$V6evalTool::TestVersion = '$Name: REL_3_3_2 $';}
+
+use V6evalTool;
+
+srand();
+
+
+
+#--------------------------------------------------------------#
+# internal configuration                                       #
+#--------------------------------------------------------------#
+
+my $Link	= 'Link0';
+my $local_port	= int(rand(0xffff));
+my $remote_port	= 9;
+my $initial_seq	= int(rand(0xffffffff));
+
+
+
+#--------------------------------------------------------------#
+# internal values                                              #
+#--------------------------------------------------------------#
+
+%pktdesc	= (
+	'send_ereq'		=> 'Send Echo Request: TN -&gt; NUT',
+	'recv_erep'		=> 'Recv Echo Reply: NUT-&gt; TN',
+	'recv_ns_multi'		=> 'Recv NS (multicast): NUT-&gt; TN',
+	'recv_ns_uni'		=> 'Recv NS (unicast) w/o SLL: NUT-&gt; TN',
+	'recv_ns_uni_sll'	=> 'Recv NS (unicast) w/ SLL: NUT-&gt; TN',
+	'send_na'		=> 'Send NA: TN -&gt; NUT',
+	'send_tcp'		=> 'Send TCP: TN -&gt; NUT',
+	'recv_tcp'		=> 'Recv TCP: NUT-&gt; TN',
+);
+
+my %nd	= (
+	'recv_ns_multi'		=> 'send_na',
+	'recv_ns_uni'		=> 'send_na',
+	'recv_ns_uni_sll'	=> 'send_na',
+);
+
+my $cpp	 =
+	"-DCPP_LOCAL_PRT=$local_port ".
+	"-DCPP_RMT_PRT=$remote_port ";
+
+my %vsend	= ();
+my %vrecv	= ();
+my $vrecv_wait	= 1;
+my $vrecv_loop	= 3;
+my $seq_no	= 0;
+my $ack_no	= 0;
+my $seektime	= 0;
+my $html	= '';
+
+
+
+#--------------------------------------------------------------#
+# INITIALIZATION: Echo Reqest/Reply                            #
+#--------------------------------------------------------------#
+
+vCapture($Link);
+
+vLogHTML('<FONT COLOR="#FF0000" SIZE="5"><U><B>INITIALIZATION'.
+        '</B></U></FONT><BR>');
+
+%vsend = vSend($Link, 'send_ereq');
+$seektime = $vsend{'sentTime1'};
+
+for(my $d = 0; $d < $vrecv_loop; $d ++) {
+	# verify packets since last vSend(Echo Request/NS)
+	%vrecv = vRecv($Link, $vrecv_wait, $seektime, 0,
+		sort(keys(%nd)), 'recv_erep');
+
+	# if vRecv() get NS, send back NA
+	while(my ($recv, $send) = each(%nd)) {
+		if($vrecv{'recvFrame'} eq $recv) {
+			%vsend = vSend($Link, $send);
+			$seektime = $vsend{'sentTime1'};
+
+			$d --;
+			last;
+		}
+	}
+
+	# if vRecv() get an expected packet, exit from for() loop
+	if($vrecv{'recvFrame'} eq 'recv_erep') {
+		last;
+	}
+}
+
+if($vrecv{'recvFrame'} ne 'recv_erep') {
+	vLogHTML('<FONT COLOR="#FF0000">Can\'t get '.
+		'Echo Reply</FONT><BR>');
+
+	vLogHTML('<B><FONT COLOR="#FF0000">FAIL</FONT></B><BR>');
+	exit($V6evalTool::exitFail);
+}
+
+
+
+#--------------------------------------------------------------#
+# TEST PROCEDURE:                                              #
+#     Basic 3-Way Handshake for Connection Synchronization     #
+#--------------------------------------------------------------#
+
+vLogHTML('<FONT COLOR="#FF0000" SIZE="5"><U><B>TEST PROCEDURE: '.
+	'Basic 3-Way Handshake for Connection Synchronization'.
+	'</B></U></FONT><BR>');
+
+
+
+#------------------------------#
+# Send SYN                     #
+#------------------------------#
+
+$pktdesc{'send_tcp'} = 'Send SYN: TN -&gt; NUT';
+
+# override CPP_SEQ_NO and CPP_SYN_SEND value in packet.def
+vCPP($cpp . "-DCPP_SEQ_NO=$initial_seq -DCPP_SYN_SEND=1");
+
+%vsend = vSend($Link, 'send_tcp');
+$seektime = $vsend{'sentTime1'};
+
+$html  = "    <PRE>\n";
+$html .= "    TN            NUT\n";
+$html .= "    |              |\n";
+$html .= "    | -----------&gt; | " .
+	"&lt;SEQ=$initial_seq&gt;" .
+	"&lt;CTL=SYN&gt;\n";
+
+$html .= "    |              |\n";
+$html .= "    </PRE>\n";
+
+vLogHTML($html);
+
+
+
+#------------------------------#
+# Recv SYN,ACK                 #
+#------------------------------#
+
+$pktdesc{'recv_tcp'} = 'Recv SYN,ACK: NUT -&gt; TN';
+
+# override CPP_ACK_RECV and CPP_SYN_RECV value in packet.def
+vCPP($cpp . "-DCPP_ACK_RECV=1 -DCPP_SYN_RECV=1");
+
+for(my $d = 0; $d < $vrecv_loop; $d ++) {
+	# verify packets since last vSend(SYN/NS) time
+	%vrecv = vRecv($Link, $vrecv_wait, $seektime, 0,
+		sort(keys(%nd)), 'recv_tcp');
+
+	# if vRecv() get NS, send back NA
+	while(my ($recv, $send) = each(%nd)) {
+		if($vrecv{'recvFrame'} eq $recv) {
+			%vsend = vSend($Link, $send);
+			$seektime = $vsend{'sentTime1'};
+
+			$d --;
+			last;
+		}
+	}
+
+	# if vRecv() get an expected packet, exit from for() loop
+	if($vrecv{'recvFrame'} eq 'recv_tcp') {
+		($seq_no, $ack_no) = get_tcp_value(%vrecv);
+
+		$html  = "    <PRE>\n";
+		$html .= "    TN            NUT\n";
+		$html .= "    |              |\n";
+		$html .= "    | &lt;----------- | ".
+			"&lt;SEQ=$seq_no&gt;".
+			"&lt;ACK=$ack_no&gt;".
+			"&lt;CTL=SYN,ACK&gt;\n";
+
+		$html .= "    |              |\n";
+		$html .= "    </PRE>\n";
+
+		vLogHTML($html);
+
+		last;
+	}
+}
+
+if($vrecv{'recvFrame'} ne 'recv_tcp') {
+	vLogHTML('<FONT COLOR="#FF0000">Can\'t get SYN,ACK</FONT><BR>');
+
+	vLogHTML('<B><FONT COLOR="#FF0000">FAIL</FONT></B><BR>');
+	exit($V6evalTool::exitFail);
+}
+
+
+
+#------------------------------#
+# Send ACK                     #
+#------------------------------#
+
+$pktdesc{'send_tcp'} = 'Send ACK: TN -&gt; NUT';
+
+$seq_no ++;
+
+# override CPP_SEQ_NO, CPP_ACK_NO and CPP_ACK_SEND value in packet.def
+vCPP($cpp . "-DCPP_SEQ_NO=$ack_no -DCPP_ACK_NO=$seq_no -DCPP_ACK_SEND=1");
+
+%vsend = vSend($Link, 'send_tcp');
+
+$html  = "    <PRE>\n";
+$html .= "    TN            NUT\n";
+$html .= "    |              |\n";
+$html .= "    | -----------&gt; | ".
+	"&lt;SEQ=$ack_no&gt;".
+	"&lt;ACK=$seq_no&gt;".
+	"&lt;CTL=ACK&gt;\n";
+
+$html .= "    |              |\n";
+$html .= "    </PRE>\n";
+
+vLogHTML($html);
+
+
+
+#--------------------------------------------------------------#
+# TEST PROCEDURE: Normal Close Sequence                        #
+#--------------------------------------------------------------#
+
+vLogHTML('<FONT COLOR="#FF0000" SIZE="5"><U><B>TEST PROCEDURE: '.
+	'Normal Close Sequence</B></U></FONT><BR>');
+
+
+
+#------------------------------#
+# Send FIN,ACK                 #
+#------------------------------#
+
+$pktdesc{'send_tcp'} = 'Send FIN,ACK: TN -&gt; NUT';
+
+# override CPP_SEQ_NO, CPP_ACK_NO, CPP_FIN_SEND and CPP_ACK_SEND value
+# in packet.def
+vCPP($cpp . "-DCPP_SEQ_NO=$ack_no -DCPP_ACK_NO=$seq_no " .
+	"-DCPP_FIN_SEND=1 -DCPP_ACK_SEND=1");
+
+%vsend = vSend($Link, 'send_tcp');
+$seektime = $vsend{'sentTime1'};
+
+$html  = "    <PRE>\n";
+$html .= "    TN            NUT\n";
+$html .= "    |              |\n";
+$html .= "    | -----------&gt; | ".
+	"&lt;SEQ=$ack_no&gt;".
+	"&lt;ACK=$seq_no&gt;".
+	"&lt;CTL=FIN,ACK&gt;\n";
+
+$html .= "    |              |\n";
+$html .= "    </PRE>\n";
+
+vLogHTML($html);
+
+
+
+#------------------------------#
+# Recv ACK                     #
+#------------------------------#
+
+$pktdesc{'recv_tcp'} = 'Recv ACK: NUT -&gt; TN';
+
+# override CPP_ACK_RECV value in packet.def
+vCPP($cpp . "-DCPP_ACK_RECV=1");
+
+for(my $d = 0; $d < $vrecv_loop; $d ++) {
+	# verify packets since last vSend(FIN,ACK/NS) time
+	%vrecv = vRecv($Link, $vrecv_wait, $seektime, 0,
+		sort(keys(%nd)), 'recv_tcp');
+
+	# if vRecv() get NS, send back NA
+	while(my ($recv, $send) = each(%nd)) {
+		if($vrecv{'recvFrame'} eq $recv) {
+			%vsend = vSend($Link, $send);
+			$seektime = $vsend{'sentTime1'};
+
+			$d --;
+			last;
+		}
+	}
+
+	# if vRecv() get an expected packet, exit from for() loop
+	if($vrecv{'recvFrame'} eq 'recv_tcp') {
+		($seq_no, $ack_no) = get_tcp_value(%vrecv);
+
+		$html  = "    <PRE>\n";
+		$html .= "    TN            NUT\n";
+		$html .= "    |              |\n";
+		$html .= "    | &lt;----------- | ".
+			"&lt;SEQ=$seq_no&gt;".
+			"&lt;ACK=$ack_no&gt;".
+			"&lt;CTL=ACK&gt;\n";
+
+		$html .= "    |              |\n";
+		$html .= "    </PRE>\n";
+
+		vLogHTML($html);
+
+		$seektime = $vrecv{'recvTime1'};
+
+		last;
+	}
+}
+
+if($vrecv{'recvFrame'} ne 'recv_tcp') {
+	vLogHTML('<FONT COLOR="#FF0000">Can\'t get ACK</FONT><BR>');
+
+	vLogHTML('<B><FONT COLOR="#FF0000">FAIL</FONT></B><BR>');
+	exit($V6evalTool::exitFail);
+}
+
+
+
+#------------------------------#
+# Recv FIN,ACK                 #
+#------------------------------#
+
+$pktdesc{'recv_tcp'} = 'Recv FIN,ACK: NUT -&gt; TN';
+
+# override CPP_FIN_RECV and CPP_ACK_RECV value in packet.def
+vCPP($cpp . "-DCPP_FIN_RECV=1 -DCPP_ACK_RECV=1");
+
+for(my $d = 0; $d < $vrecv_loop; $d ++) {
+	# verify packets since last vRecv(ACK)/vSend(NS) time
+	%vrecv = vRecv($Link, $vrecv_wait, $seektime, 0,
+		sort(keys(%nd)), 'recv_tcp');
+
+	# if vRecv() get NS, send back NA
+	while(my ($recv, $send) = each(%nd)) {
+		if($vrecv{'recvFrame'} eq $recv) {
+			%vsend = vSend($Link, $send);
+			$seektime = $vsend{'sentTime1'};
+
+			$d --;
+			last;
+		}
+	}
+
+	# if vRecv() get an expected packet, exit from for() loop
+	if($vrecv{'recvFrame'} eq 'recv_tcp') {
+		($seq_no, $ack_no) = get_tcp_value(%vrecv);
+
+		$html  = "    <PRE>\n";
+		$html .= "    TN            NUT\n";
+		$html .= "    |              |\n";
+		$html .= "    | &lt;----------- | ".
+			"&lt;SEQ=$seq_no&gt;".
+			"&lt;ACK=$ack_no&gt;".
+			"&lt;CTL=FIN,ACK&gt;\n";
+
+		$html .= "    |              |\n";
+		$html .= "    </PRE>\n";
+
+		vLogHTML($html);
+
+		last;
+	}
+}
+
+if($vrecv{'recvFrame'} ne 'recv_tcp') {
+	vLogHTML('<FONT COLOR="#FF0000">Can\'t get FIN,ACK</FONT><BR>');
+
+	vLogHTML('<B><FONT COLOR="#FF0000">FAIL</FONT></B><BR>');
+	exit($V6evalTool::exitFail);
+}
+
+
+
+#------------------------------#
+# Send ACK                     #
+#------------------------------#
+
+$pktdesc{'send_tcp'} = 'Send ACK: TN -&gt; NUT';
+
+$seq_no ++;
+
+# override CPP_SEQ_NO, CPP_ACK_NO and CPP_ACK_SEND value in packet.def
+vCPP($cpp . "-DCPP_SEQ_NO=$ack_no -DCPP_ACK_NO=$seq_no -DCPP_ACK_SEND=1");
+
+%vsend = vSend($Link, 'send_tcp');
+
+$html  = "    <PRE>\n";
+$html .= "    TN            NUT\n";
+$html .= "    |              |\n";
+$html .= "    | -----------&gt; | ".
+	"&lt;SEQ=$ack_no&gt;".
+	"&lt;ACK=$seq_no&gt;".
+	"&lt;CTL=ACK&gt;\n";
+
+$html .= "    |              |\n";
+$html .= "    </PRE>\n";
+
+vLogHTML($html);
+
+vStop($Link);
+
+vLogHTML('<B>PASS</B><BR>');
+exit($V6evalTool::exitPass);
+
+
+
+################################################################
+#                                                              #
+# get_tcp_value()                                              #
+#                                                              #
+#     - get Sequence Number and Acknowledgment Number          #
+#       from received packet                                   #
+#                                                              #
+################################################################
+
+sub get_tcp_value(%) {
+	my %vrecv = @_;
+
+	my $base	= 'Frame_Ether.Packet_IPv6.Upp_TCP.Hdr_TCP';
+
+#	while(my ($key, $value) = each(%vrecv)) {
+#		print "$key\t$value\n";
+#	}
+
+	unless(defined($vrecv{$base . '.SequenceNumber'}) &&
+		defined($vrecv{$base . '.AcknowledgmentNumber'})) {
+
+		vLogHTML('<B><FONT COLOR="#FF0000">Internal error'.
+			'</FONT></B><BR>');
+
+		exit($V6evalTool::exitFatal);
+	}
+
+	my $seq_no	= $vrecv{$base . '.SequenceNumber'};
+	my $ack_no	= $vrecv{$base . '.AcknowledgmentNumber'};
+
+	return($seq_no, $ack_no);
+}

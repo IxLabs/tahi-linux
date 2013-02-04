@@ -1,0 +1,416 @@
+		Installing IPv6 Conformance Test Package
+
+			        TAHI Project
+
+		       $Date: 2003/04/23 08:55:15 $
+
+Terminology
+===========
+
+Tester Node (TN)
+	A tester node for the conformance tests.
+
+Node Under Test (NUT)
+	A testee node for the conformance tests.
+
+Network Under Test
+	The network where the conformance tests are executed.
+
+Tester Interface
+	The network interface of TN
+	hooked up to the Network Under Test.
+
+Interface Under Test
+	The network interface of NUT
+	hooked up to the Network Under Test.
+
+
+Prerequisites
+=============
+
+Prerequisites for TN:
+	- The package supports only FreeBSD 4.6 or higher.
+	- The package can also coexist with FreeBSD version of KAME.
+	- It is mandatory to install IPv6 Conformance Test Platform
+	  "v6eval" that is also written by TAHI project. For more
+	  information, please refer to 00README.v6eval.
+
+
+Installing the package onto TN
+==============================
+
+0. Before Starting
+
+   Make sure that you completed installing "v6eval" package.
+   Please refer to 00README.v6eval for more information.
+
+1. Extracting ct package
+
+	% tar zxvf ct-X.X.tar.gz
+
+2. Installing ct package
+
+	% cd ct-X.X
+	% su
+	# make install
+
+   With the above steps, you can install ct package into
+   /usr/local/v6eval/ct directory.
+   Be sure not to run the tests within this directory.
+
+3. Copying ct package
+   Copy ct directory to any directory you like.
+	% cp -pR /usr/local/v6eval/ct  $SOMEWHERE/ct
+	% chmod -R +w $SOMEWHERE/ct
+
+
+Configuration
+============
+
+1. Physical Configurations
+
+1.1. Network Under Test
+
+Hook up the Tester Interface of TN to the Network Under Test.
+Tester Interface of TN can be configured for IPv4 and for IPv6 as well.
+
+Hook up the Interface Under Test of NUT to the Network Under Test.
+Interface Under Test of NUT must be configured for IPv6, while it can
+be configured for IPv4 too.
+
+Make sure that any other nodes are not hooked up to the network
+because their packets would disturb the conformance tests.
+
+	Example: (If NUT is host implementation)
+
+		TN			NUT
+		 |the Tester I/f: ed1	 |the I/f Under Test: fxp0
+		 |			 |
+		 |			 |
+		-+-----------------------+- Link0
+		  the Network Under Test
+
+	Example: (If NUT is router implementation)
+
+		-+-----------------------+- Link1
+		 |			 |
+		 |			 |
+		 |the Tester I/f: ed2	 |the I/f Under Test: fxp1
+		TN			NUT
+		 |the Tester I/f: ed1	 |the I/f Under Test: fxp0
+		 |			 |
+		 |			 |
+		-+-----------------------+- Link0
+		  the Network Under Test
+
+1.2. Serial line
+
+Connect both COM ports of TN and NUT with
+a Null-modem cable (or a RS232C cross cable).
+
+	Example:
+
+	   COM1            COM1
+	TN --------------------	NUT
+	        serial line
+	       (Null-modem cable)
+
+The following Null-modem cable is required to connect TN and NUT
+if a cable is DSUB-9 pins.
+
+	1 DCD ********** open ********* 1 DCD
+
+	2 RXD ------------------------- 3 TXD
+	3 TXD ------------------------- 2 RSD
+
+	4 DTR ------------------------- 6 DSR
+	6 DSR ------------------------- 4 DTR
+
+	5 GND ------------------------- 5 GND
+
+	7 RTS ------------------------- 8 CTS
+	8 CTS ------------------------- 7 RTS
+
+	9 CE  ********** open ********* 9 CE
+
+For details, please read "Serial Communications" of the handbook of FreeBSD:
+	http://www.freebsd.org/handbook/
+
+
+
+2. Configuration of NUT (example)
+
+2.1. FreeBSD 4.7-RELEASE
+
+2.1.1. /etc/resolv.conf
+
+Remove /etc/resolv.conf to prevent NUT from issuing unnecessary packets
+that would disturb the tests.
+
+
+2.1.2. Default route
+
+It is recommended to remove IPv4 default route, though it is not mandatory.
+
+
+2.1.3. Account of the super user
+
+It is set as a prerequisite for NUT that TN has the following account:
+
+	- user-name: root
+	- password: v6eval
+	- login shell: /bin/csh
+	- prompt: #
+
+
+2.1.4. /etc/rc.conf
+
+If NUT is a host, at least, you must need the following line to rc.conf.
+
+		ipv6_enable="YES"
+
+	Example: /etc/rc.conf
+	==========================================================
+	ipv6_enable="YES"
+	ipv6_network_interfaces="fxp0"
+	ipv6_default_interface="fxp0"
+	==========================================================
+
+If NUT is a router, you need more modification to rc.conf.
+
+Important points:
+	- Do not run any kind of routing daemon
+	  which packets would disturb the tests.
+
+	- Assign a prefix "3ffe:501:ffff:100/64" and "3ffe:501:ffff:101/64" 
+	  on Interface Under Test.
+
+	Example: /etc/rc.conf
+	==========================================================
+	ipv6_enable="YES"
+	ipv6_default_interface="fxp0"
+	ipv6_gateway_enable="YES"
+	ipv6_network_interfaces="fxp0 fxp1"
+	ipv6_prefix_fxp0="3ffe:501:ffff:100"
+	ipv6_prefix_fxp1="3ffe:501:ffff:101"
+	rtadvd_enable="NO"
+	==========================================================
+
+	- If you would like to test IPsec for IPv4,
+	  you must configure NUT as router for IPv4.
+
+	Example: /etc/rc.conf
+	==========================================================
+	gateway_enable="YES"
+	==========================================================
+
+2.1.5. /etc/rtadvd.conf
+
+The current version of the tests does not require you to run a rtadvd daemon
+even if NUT is a router.
+
+
+2.1.6. /etc/ttys
+
+TN requires you to log into NUT as a super user.
+To log into NUT, modify /etc/ttys.
+
+	Example: /etc/ttys
+	==========================================================
+	--- ttys.orig   Fri Oct 12 13:32:01 2001
+	+++ ttys        Fri Oct 12 13:32:54 2001
+	@@ -42,6 +42,7 @@
+	 ttyv8  "/usr/X11R6/bin/xdm -nodaemon"  xterm   off secure
+	 # Serial terminals
+	 # The 'dialup' keyword identifies dialin lines to login, fingerd etc.
+	+cuaa0  "/usr/libexec/getty std.9600"   unknown on  secure
+	 ttyd0  "/usr/libexec/getty std.9600"   dialup  off secure
+	 ttyd1  "/usr/libexec/getty std.9600"   dialup  off secure
+	 ttyd2  "/usr/libexec/getty std.9600"   dialup  off secure
+	==========================================================
+
+NOTE:	The cuaa* drivers are safer than the ttyd* drivers
+	because the cuaa* drivers can work with a Null-modem cable
+	that drops CD signals.
+
+	For more information, please read "Serial Communications"
+	of the handbook of FreeBSD:
+		http://www.freebsd.org/handbook/
+
+
+2.1.7. /etc/inetd.conf
+
+If you want to execute the test 'IPSec AH and ESP for IPv4(UDP)',
+you need to open the port echo/udp.
+
+	/etc/inetd.conf
+	================================================================
+	--- inetd.conf.orig     Thu Oct  3 10:29:34 2002
+	+++ inetd.conf  Thu Oct  3 10:29:57 2002
+	@@ -42,10 +42,10 @@
+	 #time  stream  tcp6    nowait  root    internal
+	 #time   dgram  udp     wait    root    internal
+	 #time   dgram  udp6    wait    root    internal
+	-#echo  stream  tcp     nowait  root    internal
+	+echo   stream  tcp     nowait  root    internal
+	 echo   dgram   udp6    wait    root    internal
+	 echo   dgram   udp     wait    root    internal
+	-#echo  stream  tcp6    nowait  root    internal
+	+echo   stream  tcp6    nowait  root    internal
+	 #discard stream        tcp     nowait  root    internal
+	 #discard stream        tcp6    nowait  root    internal
+	 #discard dgram udp     wait    root    internal
+	================================================================
+
+
+2.1.8. kernel configuration
+
+If you want to execute IPsec test,
+you need to re-compile the kernel.
+
+	/usr/src/sys/i386/conf/GENERIC
+	================================================================
+	--- GENERIC.orig        Fri Oct 12 14:19:16 2001
+	+++ GENERIC     Fri Oct 12 14:22:55 2001
+	@@ -30,6 +30,8 @@
+	 options        MATH_EMULATE            #Support for x87 emulation
+	 options        INET                    #InterNETworking
+	 options        INET6                   #IPv6 communications protocols
+	+options        IPSEC                   #IP security
+	+options        IPSEC_ESP               #IP security (crypto; define w/ IPSEC)
+	 options        FFS                     #Berkeley Fast Filesystem
+	 options        FFS_ROOT                #FFS usable as root device [keep this!]
+	 options        SOFTUPDATES             #Enable FFS soft updates support
+	================================================================
+
+	# cd /usr/src/sys/i386/conf/
+	# /usr/sbin/config GENERIC
+	# cd ../../compile/GENERIC/
+	# make depend
+	# make
+	# make install
+
+
+3. Configuration of TN
+
+3.1. /etc/resolv.conf
+
+It is recommended to remove /etc/resolv.conf, though it is not mandatory.
+
+3.2. Default route
+
+It is recommended to remove IPv4 default route, though it is not mandatory.
+
+3.3. /usr/local/v6eval/etc/tn.def
+
+You can copy any entry except "Link0" from the sample file.
+
+/usr/local/v6eval/etc/tn.def.sample.
+
+	"Link0" entry MUST have:
+		- the EXACT name of Tester Interface.
+		- a BOGUS MAC address.
+		  It is important that the Tool can impersonate other nodes.
+
+	"LinkX" entries are required only for a router test.
+
+	Example: /usr/local/v6eval/etc/tn.def
+	==========================================================
+	RemoteDevice    cuaa0
+	RemoteDebug     0
+	RemoteIntDebug  0
+	RemoteLog       0
+	RemoteSpeed	0
+	RemoteLogout	0
+	RemoteMethod	serial
+	Link0   ed1     00:00:00:00:01:00
+	==========================================================
+
+3.4. /usr/local/v6eval/etc/nut.def
+
+You can copy both "System" and "TargetName" from the sample file
+/usr/local/v6eval/etc/nut.def.sample.
+
+	"HostName" entry SHOULD be a host name of NUT.
+
+	"Type" entry MUST be:
+		- "host" if NUT is configured as a host.
+		- "router" if NUT is configured as a router.
+
+	"User" entry MUST be a name of a super user account of NUT.
+
+	"Password" entry MUST be a password of a super user account of
+	NUT.
+
+	"Link0" entry MUST have:
+		- the EXACT name of the Interface Under Test.
+		- the EXACT MAC address of the Interface Under Test.
+
+	"LinkX" entries are required only for a router test.
+
+	Example: /usr/local/v6eval/etc/nut.def
+	==========================================================
+	System          freebsd-i386
+	TargetName      FreeBSD 4.7-RELEASE
+	HostName        target.tahi.org
+	Type            host
+	User            root
+	Password        v6eval
+	Link0           fxp0    00:90:27:14:ce:da
+	==========================================================
+
+3.5. cu command
+
+To run cu command, set up the following.
+
+	# touch /var/log/aculog
+	# chmod a+rw /var/log/aculog
+
+HINT: /etc/fbtab is another way to adjust file permission.
+
+The package uses "/dev/cuaa0" as the default line name 
+(see /usr/local/v6eval/etc/tn.def).
+If TN requires a different line name, modify the following files,
+depending on the setups of your machine:
+
+	- /etc/remote or else
+	- "RemoteDevice" entry in /usr/local/v6eval/etc/tn.def
+
+DIAG:	If "cu" related customization is not properly performed,
+	the following command can not be executed successfully:
+
+		%cu -l /dev/cuaa0
+		user: root
+		password: v6eval
+		root@NUT#
+
+ 	If /usr/local/v6eval/etc/{nut,tn}.def is not correct,
+	the following command can not be executed successfully.
+
+		%/usr/local/v6eval/bin/kame-freebsd/loginout.rmt -o1
+
+
+Run the Tests
+=============
+
+	% cd $SOMEWHERE/ct
+	% make clean
+	% make test
+
+It will take a few hours to run the tests. When all tests are completed,
+you can see the test results at $SOMEWHERE/ct/index.html.
+
+Note that running the tests clears the previous test results.
+If you do not want to lose them, you should make a new copy of ct package
+in a different directory.
+
+HINT:	To see the test results with Netscape, follow the next steps:
+	1. Install ethereal of KAME/ports.
+	2. Register application in Netscape:
+		MIME Type: application/x-tcpdump
+		Extension: dump
+		Action/Application: ethereal -r %s
+
+
+							[End of INSTALL]
+

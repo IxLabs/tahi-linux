@@ -1,0 +1,24 @@
+#
+# tn.def
+#
+#  Information about the Tester Node (TN)
+#
+
+#
+# Remote Controal Configuration
+#
+RemoteDevice	cuad0
+RemoteDebug	0
+RemoteIntDebug	0
+RemoteLog	1
+RemoteSpeed	0
+RemoteLogout	0
+RemoteMethod	serial
+#filter	ipv6
+
+#linkname	interface	BOGUS ether source address
+#		name		of the Tester Interface
+Link0		de0		00:00:00:00:01:00
+#Link1		de1		00:00:00:00:01:01
+#Link2		de2		00:00:00:00:01:02
+#Link3		de4		00:00:00:00:01:03

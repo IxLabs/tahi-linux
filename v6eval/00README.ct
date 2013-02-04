@@ -1,0 +1,201 @@
+		   README of IPv6 Conformance Test Package
+
+				TAHI Project
+
+			$Date: 2003/06/10 14:51:34 $
+
+
+Project Overview
+================
+
+TAHI Project is the joint effort formed with the objective of
+developing and providing the verification technology for IPv6. 
+
+The growth process of IPv4 was the history of encountering various kinds of
+obstacles and conquering such obstacles. However, once the position as
+infrastructure was established, it is not allowed to repeat the same history.
+This is a reason why the verification technology is essential for IPv6
+deployment.
+
+	We research and develop conformance tests and interoperability tests
+	for IPv6.
+
+	We closely work with the KAME project and USAGI project.
+	We help activities of these projects in the quality side by offering
+	the verification technology we develop in TAHI project and improve
+	the development efficiency. 
+
+	We open the results and fruits of the project to the public for FREE.
+	Any developer concerned with IPv6 can utilize the results and fruits
+	of TAHI project freely. A free software plays an important role
+	in progress of the Internet. We believe that providing the
+	verification technology for FREE contributes to advances of IPv6.
+	Besides the programs, the specifications and criteria of verification
+	will be included in the Package.
+
+
+Organizations
+=============
+
+TAHI Project started at October 1, 1998,
+then the project was formed by following three organizations
+(in alphabetical order):
+
+	The University of Tokyo
+	YDC Corp.
+	Yokogawa Electric Corp.
+
+Now the project is formed by following two organizations.
+
+	The University of Tokyo
+	Yokogawa Electric Corp.
+
+
+Introduction of the Package
+===========================
+
+"ct" is the IPv6 Conformance Test Program Package written by TAHI project.
+Not all IPv6 conformance tests developed referring to IPv6 related RFCs are
+included in this Package.
+
+The tests run on the IPv6 Conformance Test Tool Package "v6eval", 
+that is also written by TAHI project. See 00README.v6eval for more
+information about the Tool.
+
+Both packages "ct" and "v6eval" may be obtained at our site:
+	http://www.tahi.org/
+
+
+Copyright
+=========
+
+Please refer to the COPYRIGHT file for copyright notice.
+
+
+Install and Run 
+===============
+
+Complete installation instructions can be found in the INSTALL file.
+
+
+Conformance Test Coverage
+=========================
+
+The following tests are available now:
+	Directory Name		Category of Test
+	-----------------------+--------------------------------
+	spec/			RFC2460: IPv6 Specification
+	-----------------------+--------------------------------
+	icmp/			RFC2463: ICMPv6 for IPv6 
+				   Specification
+	-----------------------+--------------------------------
+	nd/			RFC2461: Neighbor Discovery for
+				   IP Version 6 (IPv6)
+	-----------------------+--------------------------------
+	stateless-addrconf/	RFC2462: IPv6 Stateless Address
+				   Autoconfiguration
+	-----------------------+--------------------------------
+	pmtu/			RFC1981: Path MTU Discovery for 
+				   IP version 6
+	-----------------------+--------------------------------
+	router-select/		draft-ietf-ipv6-router-selection-02:
+				   Default Router Preferences,
+                                   More-Specific Routes, and Load Sharing
+	-----------------------+--------------------------------
+	ipsec/			RFC 2401: Security Architecture 
+	ipsec-udp/		   for the Internet Protocol
+				RFC 2402: IP Authentication Header
+				RFC 2406: IP Encapsulating Security
+				   Payload (ESP)
+				RFC 2403: The Use of HMAC-MD5-96
+				   within ESP and AH
+				RFC 2404: The Use of HMAC-SHA-1-96
+				   within ESP and AH
+				RFC 2405: The ESP DES-CBC Cipher
+				   Algorithm With Explicit IV
+				RFC 2410: The NULL Encryption
+				   Algorithm and Its Use With IPsec
+				RFC 2451: The ESP CBC-Mode Cipher
+				   Algorithms
+	-----------------------+--------------------------------
+	ipsec4/			RFC 2401: Security Architecture 
+	ipsec4-udp/		   for the Internet Protocol
+				RFC 2402: IP Authentication Header
+				RFC 2406: IP Encapsulating Security
+				   Payload (ESP)
+				RFC 2403: The Use of HMAC-MD5-96
+				   within ESP and AH
+				RFC 2404: The Use of HMAC-SHA-1-96
+				   within ESP and AH
+				RFC 2405: The ESP DES-CBC Cipher
+				   Algorithm With Explicit IV
+				RFC 2410: The NULL Encryption
+				   Algorithm and Its Use With IPsec
+				RFC 2451: The ESP CBC-Mode Cipher
+				   Algorithms
+	-----------------------+--------------------------------
+	mip6-cn-20/		draft-ietf-mobileip-ipv6-20:
+	mip6-ha-20/		   Mobility Support in IPv6
+	mip6-mn-20/
+	-----------------------+--------------------------------
+	default-addr-select/	RFC 3484: Default Address Selection 
+				   for Internet Protocol version 6 (IPv6)
+        -----------------------+--------------------------------
+	dd/			draft-ietf-ipv6-dns-discovery-07.txt
+				   DNS Discovery   
+	-----------------------+--------------------------------
+	pd/			draft-ietf-dhc-dhcpv6-opt-prefix-delegation-02.txt
+				   IPv6 Prefix Options for DHCPv6
+				draft-ietf-dhc-dhcpv6-28.txt
+				   Dynamic Host Configuration Protocol for IPv6
+	-----------------------+--------------------------------
+	tunnel/			draft-ietf-ngtrans-mech-04:
+				Transition Mechanisms for IPv6
+				Hosts and Routers
+				(IPv6 over IPv4 Tunnel)
+	-----------------------+--------------------------------
+	natpt/			contributed by Ericsson Telebit
+
+				RFC 2765: Stateless IP/ICMP Translation
+				   Algorithm (SIIT)
+				RFC 2766: Network Address Translation
+				   - Protocol Translation (NAT-PT)
+	-----------------------+--------------------------------
+	robust/			surprise test
+				This test does not based on any RFCs
+				and drafts.
+
+details of the tests are described in 00README of each directory respectively.
+
+Contact Points
+==============
+
+For more information about TAHI project, please visit our site:
+	http://www.tahi.org/
+
+To contact us, please e-mail to:
+	contact@tahi.org
+
+
+Acknowledgments
+===============
+
+We deeply thank the following projects for their great support to us:
+	KAME Project	(http://www.kame.net/)
+	USAGI Project	(http://www.linux-ipv6.org/)
+	WIDE Project	(http://www.wide.ad.jp/)
+
+The tests have ran for the following implementations.
+We also thank people who have given us the opportunities.
+
+	All of participants and organizers in
+
+		(in alphabetical order):
+
+		- Connectathon
+		- ETSI plugtests
+		- TAHI IPv6 Interoperability Test Event
+
+NOTE: If your want to run the test for the above implementations,
+      you must configure them to fit testing environment.
+							[End of README]

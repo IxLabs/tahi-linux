@@ -1,0 +1,269 @@
+//
+// Copyright (C) 2003 Yokogawa Electric Corporation,
+// INTAP(Interoperability Technology Association
+// for Information Processing, Japan). 
+// Copyright (C) IBM Corporation 2003.
+// All rights reserved.
+// 
+// Redistribution and use of this software in source and binary forms, with 
+// or without modification, are permitted provided that the following 
+// conditions and disclaimer are agreed and accepted by the user:
+// 
+// 1. Redistributions of source code must retain the above copyright 
+// notice, this list of conditions and the following disclaimer.
+// 
+// 2. Redistributions in binary form must reproduce the above copyright 
+// notice, this list of conditions and the following disclaimer in the 
+// documentation and/or other materials provided with the distribution.
+// 
+// 3. Neither the names of the copyrighters, the name of the project which 
+// is related to this software (hereinafter referred to as "project") nor 
+// the names of the contributors may be used to endorse or promote products 
+// derived from this software without specific prior written permission.
+// 
+// 4. No merchantable use may be permitted without prior written 
+// notification to the copyrighters. However, using this software for the 
+// purpose of testing or evaluating any products including merchantable 
+// products may be permitted without any notification to the copyrighters.
+// 
+// 
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+// CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+// BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+// FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+// COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+// CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+// THE POSSIBILITY OF SUCH DAMAGE.
+//
+//    Author: Kazuo Hiekata <hiekata@yamato.ibm.com>
+//
+
+#define LLOCAL_PREFIX "fe80::"
+#define _LINK_LOCAL_MULTICAST "ff02::1"
+#define LINK_LOCAL_MULTICAST v6(_LINK_LOCAL_MULTICAST)
+
+/*-----------------------------------------------------------------------------------*
+ *
+ *  Definitions
+ *
+ *-----------------------------------------------------------------------------------*/
+#define LINK0_GLOBAL_PREFIX "3ffe:501:ffff:100::"
+#define LINK1_GLOBAL_PREFIX "3ffe:501:ffff:101::"
+
+#define NUT_LLOCAL_UCAST    nut2v6(LLOCAL_PREFIX, 64)
+#define NUT_GLOBAL_UCAST    nut2v6(LINK0_GLOBAL_PREFIX, 64)
+#define NUT_SOLICITED_MCAST nut2v6("ff02:0:0:0:0:1:ff00::", 104)
+#define NUT_MAC_ADDR        nutether()
+
+#define TN0_LLOCAL_UCAST    v6("fe80::200:ff:fe00:a1a1")
+#define TN0_GLOBAL_UCAST    v6("3ffe:501:ffff:100:200:ff:fe00:a1a1")
+#define TN0_MAC_ADDR        ether("00:00:00:00:a1:a1")
+
+#define MR0_LLOCAL_UCAST    v6("fe80::200:ff:fe00:b1b1")
+#define MR0_GLOBAL_UCAST    v6("3ffe:501:ffff:100:200:ff:fe00:b1b1")
+#define MR0_MAC_ADDR        ether("00:00:00:00:b1:b1")
+
+#define TN1_LLOCAL_UCAST    v6("fe80::200:ff:fe00:a2a2")
+#define TN1_GLOBAL_UCAST    v6("3ffe:501:ffff:101:200:ff:fe00:a2a2")
+#define TN1_MAC_ADDR        ether("00:00:00:00:a2:a2")
+
+#define TN2_LLOCAL_UCAST    v6("fe80::200:ff:fe00:a3a3")
+#define TN2_GLOBAL_UCAST    v6("3ffe:501:ffff:101:200:ff:fe00:a3a3")
+#define TN2_MAC_ADDR        ether("00:00:00:00:a3:a3")
+
+#define MR1_LLOCAL_UCAST    v6("fe80::200:ff:fe00:b2b2")
+#define MR1_GLOBAL_UCAST    v6("3ffe:501:ffff:101:200:ff:fe00:b2b2")
+#define MR1_MAC_ADDR        ether("00:00:00:00:b2:b2")
+
+#define MCAST0    v6("ff0e:0:0:0:0:0:1111:100")
+#define MCAST1    v6("ff0e:0:0:0:0:0:1111:101")
+
+/*
+ * IANA hasn't assigned this address
+ */
+#define ALLMLDV2ROUTERS_MCAST_ADDR v6("ff02::16")
+
+_HETHER_define(_HETHER_mr0_to_nut      , MR0_MAC_ADDR   , NUT_MAC_ADDR)
+_HETHER_define(_HETHER_mr0_to_all      , MR0_MAC_ADDR   , v62ethermulti(v6(_ALLNODES_MCAST_ADDR)))
+_HETHER_define(_HETHER_mr0_to_mcast0   , MR0_MAC_ADDR   , v62ethermulti(MCAST0))
+_HETHER_define(_HETHER_mr0_to_mcast1   , MR0_MAC_ADDR   , v62ethermulti(MCAST1))
+_HETHER_define(_HETHER_tn0_to_nut      , TN0_MAC_ADDR   , NUT_MAC_ADDR)
+_HETHER_define(_HETHER_tn0_to_all      , TN0_MAC_ADDR   , v62ethermulti(v6(_ALLNODES_MCAST_ADDR)))
+_HETHER_define(_HETHER_tn0_to_mcast0   , TN0_MAC_ADDR   , v62ethermulti(MCAST0))
+_HETHER_define(_HETHER_tn0_to_mcast1   , TN0_MAC_ADDR   , v62ethermulti(MCAST1))
+_HETHER_define(_HETHER_nut_to_mr0      , NUT_MAC_ADDR   , MR0_MAC_ADDR)
+_HETHER_define(_HETHER_nut_to_tn0      , NUT_MAC_ADDR   , TN0_MAC_ADDR)
+_HETHER_define(_HETHER_nut_to_allmldv2 , NUT_MAC_ADDR , v62ethermulti(ALLMLDV2ROUTERS_MCAST_ADDR))
+_HETHER_define(_HETHER_nut_to_all      , NUT_MAC_ADDR , v62ethermulti(v6(_ALLNODES_MCAST_ADDR)))
+_HETHER_define(_HETHER_any             , any , any)
+
+
+//================================================================
+// Common Options for MLDv2
+Hdr_HopByHop ext_hbh_rtalert {
+	option = opt_rtalert;
+	option = opt_pad;
+}	
+Opt_RouterAlert opt_rtalert{
+	Value = 0;
+}
+Opt_PadN opt_pad{
+	OptDataLength = 0;
+}
+
+//================================================================
+// Common Address Records for MLDv2
+// Type 
+// 1    MODE_IS_INCLUDE
+// 2    MODE_IS_EXCLUDE
+// 3    CHANGE_TO_INCLUDE_MODE
+// 4    CHANGE_TO_EXCLUDE_MODE
+// 5    ALLOW_NEW_SOURCES
+// 6    BLOCK_OLD_SOURCES
+MLDv2_AddrRecord addrrecord_mcast0_llocalmcast {
+		Type = 2;
+		AuxDataLen = any;
+		// NumOfSources = 0;
+		MulticastAddress = NUT_SOLICITED_MCAST;
+}
+//
+// 1    MODE_IS_INCLUDE
+//
+MLDv2_AddrRecord addrrecord_00 {
+		Type = 1;
+		MulticastAddress = MCAST0;
+}
+MLDv2_AddrRecord addrrecord_01 {
+		Type = 2;
+		AuxDataLen = 1;
+		MulticastAddress = MCAST0;
+		AuxData = {0,1,2,3};
+}
+MLDv2_AddrRecord addrrecord_02 {
+		Type = 3;
+		AuxDataLen = 2;
+		MulticastAddress = MCAST1;
+		SourceAddress = TN0_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		AuxData = {0,1,2,3,4,5,6,7};
+}
+MLDv2_AddrRecord addrrecord_03 {
+		Type = 4;
+		MulticastAddress = MCAST1;
+		SourceAddress = TN1_GLOBAL_UCAST;
+}
+MLDv2_AddrRecord addrrecord_04 {
+		Type = 5;
+		MulticastAddress = MCAST1;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+}
+MLDv2_AddrRecord addrrecord_05 {
+		Type = 20;
+		MulticastAddress = MCAST1;
+		SourceAddress = TN1_GLOBAL_UCAST;
+}
+//================================================================
+FEM_icmp6_mldv2query_exth(
+	mldv2query_00,
+	_HETHER_mr0_to_all,
+	{
+		_SRC(MR0_LLOCAL_UCAST);
+		_DST(v6(_ALLNODES_MCAST_ADDR));
+	},
+	{
+		header = _HDR_IPV6_NAME(mldv2query_00);
+		exthdr = ext_hbh_rtalert;
+		upper  = _ICMPV6_NAME(mldv2query_00);
+	},
+	{
+		MaxResponseDelay = 5;
+		Reserved = 0;
+		MulticastAddress = v6("::");
+		Resv = 0;
+		SFlag = 0;
+		QRV = 0;
+		QQIC = 0;
+	}
+)
+//================================================================
+FEM_icmp6_mldv2query_exth(
+	mldv2query_01,
+	_HETHER_mr0_to_all,
+	{
+		_SRC(MR0_LLOCAL_UCAST);
+		_DST(v6(_ALLNODES_MCAST_ADDR));
+	},
+	{
+		header = _HDR_IPV6_NAME(mldv2query_01);
+		exthdr = ext_hbh_rtalert;
+		upper  = _ICMPV6_NAME(mldv2query_01);
+	},
+	{
+		MaxResponseDelay = 5;
+		Reserved = 0;
+		MulticastAddress = MCAST0;
+		Resv = 0;
+		SFlag = 0;
+		QRV = 0;
+		QQIC = 0;
+		SourceAddress = TN0_GLOBAL_UCAST;
+		SourceAddress = TN1_GLOBAL_UCAST;
+		SourceAddress = TN2_GLOBAL_UCAST;
+	}
+)
+//================================================================
+FEM_icmp6_mldv2report_exth(
+	mldv2report_00,
+	_HETHER_nut_to_allmldv2,
+	{
+		_SRC(NUT_LLOCAL_UCAST);
+		_DST(ALLMLDV2ROUTERS_MCAST_ADDR);
+	},
+	{
+		header = _HDR_IPV6_NAME(mldv2report_00);
+		exthdr = ext_hbh_rtalert;
+		upper  = _ICMPV6_NAME(mldv2report_00);
+	},
+	{
+		Reserved = 0;
+	}
+)
+//================================================================
+FEM_icmp6_mldv2report_exth(
+	mldv2report_01,
+	_HETHER_nut_to_allmldv2,
+	{
+		_SRC(NUT_LLOCAL_UCAST);
+		_DST(ALLMLDV2ROUTERS_MCAST_ADDR);
+	},
+	{
+		header = _HDR_IPV6_NAME(mldv2report_01);
+		exthdr = ext_hbh_rtalert;
+		upper  = _ICMPV6_NAME(mldv2report_01);
+	},
+	{
+		Reserved = 0;
+		MLDv2_AddrRecord = addrrecord_00;
+		MLDv2_AddrRecord = addrrecord_01;
+		MLDv2_AddrRecord = addrrecord_02;
+		MLDv2_AddrRecord = addrrecord_03;
+		MLDv2_AddrRecord = addrrecord_04;
+		MLDv2_AddrRecord = addrrecord_05;
+	}
+)

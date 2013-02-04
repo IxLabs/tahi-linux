@@ -1,0 +1,7 @@
+spdflush;
+flush;
+add fe80:1::200:ff:fe00:100 fe80:1::200:2ff:fe00:2632 any 1000 -p esp -E 3des-cbc "012345678901234567890123";
+add fe80:1::200:2ff:fe00:2632 fe80:1::200:ff:fe00:100 any 1000 -p esp -E 3des-cbc "012345678901234567890123";
+spdadd fe80:1::200:2ff:fe00:2632 fe80:1::200:ff:fe00:100 any -P ipsec esp/require;
+dump;
+spddump;

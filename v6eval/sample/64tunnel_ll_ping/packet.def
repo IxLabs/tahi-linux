@@ -1,0 +1,299 @@
+//
+// Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+// Yokogawa Electric Corporation, YDC Corporation,
+// IPA (Information-technology Promotion Agency, Japan).
+// All rights reserved.
+// 
+// Redistribution and use of this software in source and binary forms, with 
+// or without modification, are permitted provided that the following 
+// conditions and disclaimer are agreed and accepted by the user:
+// 
+// 1. Redistributions of source code must retain the above copyright 
+// notice, this list of conditions and the following disclaimer.
+// 
+// 2. Redistributions in binary form must reproduce the above copyright 
+// notice, this list of conditions and the following disclaimer in the 
+// documentation and/or other materials provided with the distribution.
+// 
+// 3. Neither the names of the copyrighters, the name of the project which 
+// is related to this software (hereinafter referred to as "project") nor 
+// the names of the contributors may be used to endorse or promote products 
+// derived from this software without specific prior written permission.
+// 
+// 4. No merchantable use may be permitted without prior written 
+// notification to the copyrighters. However, using this software for the 
+// purpose of testing or evaluating any products including merchantable 
+// products may be permitted without any notification to the copyrighters.
+// 
+// 
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+// CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+// BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+// FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+// COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+// CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+// THE POSSIBILITY OF SUCH DAMAGE.
+//
+
+//======================================================================
+// Frame
+Frame_Ether _ping6over4 {
+	header=eth_tn2nut;
+	packet=ip_ping64;
+}
+//----------------------------------------------------------------------
+Frame_Ether _ping {
+	header=eth_tn2nut;
+	packet=ip_ping;
+}
+//----------------------------------------------------------------------
+Frame_Ether _ns {
+	header=eth_nut2tnsol;
+	packet=ip_ns;
+}
+//----------------------------------------------------------------------
+Frame_Ether _na {
+	header=eth_tn2nut;
+	packet=ip_na;
+}
+//----------------------------------------------------------------------
+Frame_Ether _reply {
+	header=eth_nut2tn;
+	packet=ip_reply;
+}
+//----------------------------------------------------------------------
+Frame_Ether _reply6over4 {
+	header=eth_nut2tn;
+	packet=ip_reply64;
+}
+//----------------------------------------------------------------------
+Frame_Ether _arp1 {
+	header=eth_auto2bc;
+	packet=_arp_req;
+}
+//----------------------------------------------------------------------
+Frame_Ether _arp2 {
+	header=eth_tn2nut;
+	packet=_arp_rep;
+}
+//======================================================================
+// Ether
+Hdr_Ether eth_tn2nut {
+//	SourceAddress=tnether();
+//	DestinationAddress=nutether();
+//	Type=0x86dd; // ip6
+}
+//----------------------------------------------------------------------
+Hdr_Ether eth_nut2tn {
+//	SourceAddress=nutether();
+//	DestinationAddress=tnether();
+//	Type=0x86dd; // ip6
+}
+//----------------------------------------------------------------------
+Hdr_Ether eth_nut2tnsol {
+//	SourceAddress=nutether();
+//	DestinationAddress=v62ethermulti(v6merge("ff02::1:ff00:0000",104,tnv6()));
+//	Type=0x86dd; // ip6
+}
+//----------------------------------------------------------------------
+Hdr_Ether eth_auto2bc {
+//	SourceAddress=nutether();
+	DestinationAddress=ether("ff:ff:ff:ff:ff:ff");
+//	Type=0x86dd; // ip6
+}
+
+//======================================================================
+// Packet
+Packet_IPv6 ip_ping {
+	header=v6tn2nut;
+	upper=icmp_ping;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_ns {
+	header=v6nut2tnsol;
+	upper=icmp_ns;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_na {
+	header=v6tn2nutadv;
+	upper=icmp_na;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_reply {
+	header=v6nut2tn;
+	upper=icmp_reply;
+}
+
+//======================================================================
+// Packet IPv4
+Packet_IPv4 ip_ping64 {
+	header=v4tn2nut;
+	upper=ip_ping;
+}
+
+Packet_IPv4 ip_reply64 {
+	header=v4nut2tn;
+	upper=ip_reply;
+}
+
+//======================================================================
+// IPv6
+Hdr_IPv6 v6tn2nut {
+//	Version=6;
+//	SourceAddress=tnv6();
+//	DestinationAddress=nutv6();
+//	FlowLabel=0;
+//	TrafficClass=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+//	HopLimit=64;
+//	PayloadLength=16;
+}
+//----------------------------------------------------------------------
+Hdr_IPv6 v6nut2tn {
+	SourceAddress=nutv6();
+	DestinationAddress=tnv6();
+//	FlowLabel=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+//	HopLimit=64;
+//	PayloadLength=16;
+}
+//----------------------------------------------------------------------
+
+Hdr_IPv6 v6nut2tnsol {
+//	SourceAddress=nutv6();
+	DestinationAddress=tn2v6("ff02::1:ff00:0000",104);
+//	DestinationAddress=any;
+//	FlowLabel=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+//	HopLimit=64;
+	HopLimit=255;
+//	PayloadLength=16;
+}
+//----------------------------------------------------------------------
+
+Hdr_IPv6 v6tn2nutadv {
+//	SourceAddress=tnv6();
+//	DestinationAddress=nutv6();
+//	FlowLabel=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+//	HopLimit=64;
+	HopLimit=255;
+//	PayloadLength=16;
+}
+
+//======================================================================
+// IPv4
+Hdr_IPv4 v4tn2nut {
+	SourceAddress=v4("192.168.0.2");
+	DestinationAddress=v4("192.168.0.1");
+}
+
+Hdr_IPv4 v4nut2tn {
+	DestinationAddress=v4("192.168.0.2");
+	SourceAddress=v4("192.168.0.1");
+}
+
+
+//======================================================================
+// ICMPv6
+ICMPv6_EchoRequest icmp_ping {
+//	Type=128;
+//	Code=0;
+//	Checksum=0x2c90;
+//	Identifier=0x9008;
+//	SequenceNumber=0;
+	payload=apl;
+}
+//----------------------------------------------------------------------
+ICMPv6_EchoReply icmp_reply {
+//	Type=129;
+//	Code=0;
+//	Checksum=0x2b90;
+//	Identifier=0x9008;
+//	SequenceNumber=0;
+	payload=apl;
+}
+//----------------------------------------------------------------------
+// NS
+ICMPv6_NS icmp_ns {
+//	Type=135;
+//	Code=0;
+//	Checksum=0xbd2d;
+//	Reserved=zero;
+//	TargetAddress=tnv6();
+	option=sslopt_nut;
+}
+//----------------------------------------------------------------------
+// NA ("TN -> NUT")
+ICMPv6_NA icmp_na {
+//	Type=136;
+//	Code=0;
+//	Checksum=0xb32a;
+//	Reserved=zero;
+//	RFlag=0;
+	RFlag=1;
+//	SFlag=0;
+	SFlag=1;
+//	OFlag=0;
+	OFlag=1;
+	TargetAddress=tnv6();
+	option=ttlopt_tn;
+}
+
+//======================================================================
+Opt_ICMPv6_TLL ttlopt_tn {
+//	Type=2;
+//	Length=1;
+	LinkLayerAddress=tnether();	
+}
+//----------------------------------------------------------------------
+Opt_ICMPv6_SLL sslopt_nut {
+//	Type=1;
+//	Length=1;
+	LinkLayerAddress=nutether();
+}
+
+//======================================================================
+// Data
+Payload apl {
+	data=0xb9;
+	data=0xf9;
+	data=0xa2;
+	data=0x36;
+	data=0x78;
+	data=0x02;
+	data=0x0d;
+	data=0x00;
+}
+
+//======================================================================
+// ARP
+Packet_ARP _arp_req {
+	header=_arp_req_hdr;
+}
+
+Hdr_ARP _arp_req_hdr {
+	SenderPAddr=v4("192.168.0.1");
+	TargetPAddr=v4("192.168.0.2");
+	TargetHAddr=ether("00:00:00:00:00:00");
+}
+
+Packet_ARP _arp_rep {
+	header=_arp_rep_hdr;
+}
+
+Hdr_ARP _arp_rep_hdr {
+	SenderPAddr=v4("192.168.0.2");
+	TargetPAddr=v4("192.168.0.1");
+	TargetHAddr=tnether();
+}

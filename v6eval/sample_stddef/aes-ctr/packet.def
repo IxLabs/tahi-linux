@@ -1,0 +1,250 @@
+//
+// Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+// Yokogawa Electric Corporation, YDC Corporation,
+// IPA (Information-technology Promotion Agency, Japan).
+// All rights reserved.
+// 
+// Redistribution and use of this software in source and binary forms, with 
+// or without modification, are permitted provided that the following 
+// conditions and disclaimer are agreed and accepted by the user:
+// 
+// 1. Redistributions of source code must retain the above copyright 
+// notice, this list of conditions and the following disclaimer.
+// 
+// 2. Redistributions in binary form must reproduce the above copyright 
+// notice, this list of conditions and the following disclaimer in the 
+// documentation and/or other materials provided with the distribution.
+// 
+// 3. Neither the names of the copyrighters, the name of the project which 
+// is related to this software (hereinafter referred to as "project") nor 
+// the names of the contributors may be used to endorse or promote products 
+// derived from this software without specific prior written permission.
+// 
+// 4. No merchantable use may be permitted without prior written 
+// notification to the copyrighters. However, using this software for the 
+// purpose of testing or evaluating any products including merchantable 
+// products may be permitted without any notification to the copyrighters.
+// 
+// 
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+// CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+// BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+// FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+// COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+// CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+// THE POSSIBILITY OF SUCH DAMAGE.
+//
+// $TAHI: v6eval/sample_stddef/aes-ctr/packet.def,v 1.3 2007/03/07 11:04:57 akisada Exp $
+//
+
+
+
+//--------------------------------------------------------------------//
+//                                                                    //
+// Router Advertisement Message                                       //
+//                                                                    //
+//--------------------------------------------------------------------//
+FEM_icmp6_ra(
+	ra,
+	_HETHER_tn2allnodes,
+	{
+		HopLimit	= 255;
+		_SRC(tnv6());
+		_DST(v6(_ALLNODES_MCAST_ADDR));
+	},
+	{
+		CurHopLimit		= 64;
+		LifeTime		= _Default_AdvDefaultLifetime;
+		option			= _SLLOPT_tn;
+		option			= opt_pi;
+	}
+)
+
+
+
+//--------------------------------//
+// Prefix Information Option      //
+//--------------------------------//
+Opt_ICMPv6_Prefix opt_pi {
+	LFlag				= _Default_AdvOnLinkFlag;
+	AFlag				= _Default_AdvAutonomousFlag;
+	ValidLifetime		= _Default_AdvValidLifetime;
+	PreferredLifetime	= _Default_AdvPreferredLifetime;
+	Prefix				= v6(_GLOBAL0_UCAST_PRFX);
+}
+
+
+
+//--------------------------------------------------------------------//
+//                                                                    //
+// Neighbor Solicitation Message                                      //
+//                                                                    //
+//--------------------------------------------------------------------//
+FEM_icmp6_ns(
+	ns,
+	_HETHER_nut2tnsolnode,
+	{
+		HopLimit	= 255;
+		_SRC(
+			oneof(
+				nutv6(),
+				nut2v6(_GLOBAL0_UCAST_PRFX, _GLOBAL0_UCAST_PRFXLEN)
+			)
+		);
+		_DST(_IPV6_SOLNODE_MCAST(tnv6()));
+	},
+	{	
+		TargetAddress	= tnv6();
+		option	=	_SLLOPT_nut;
+	}
+)
+
+
+
+//--------------------------------------------------------------------//
+//                                                                    //
+// Neighbor Advertisement Message                                     //
+//                                                                    //
+//--------------------------------------------------------------------//
+FEM_icmp6_na(
+	na,
+	_HETHER_tn2nut,
+	{
+		HopLimit	= 255;
+		_SRC(tnv6());
+		_DST(nutv6());
+	},
+	{
+		RFlag			= 1;
+		SFlag			= 1;
+		OFlag			= 1;
+		TargetAddress	= tnv6();
+		option			= _TLLOPT_tn;
+	}
+)
+
+
+
+//--------------------------------------------------------------------//
+//                                                                    //
+// Echo Request Message                                               //
+//                                                                    //
+//--------------------------------------------------------------------//
+FEM_icmp6_echo_request(
+	ereq,
+	_HETHER_tn2nut,
+	{
+		_SRC(tn2v6(_GLOBAL1_UCAST_PRFX, _GLOBAL1_UCAST_PRFXLEN));
+		_DST(nut2v6(_GLOBAL0_UCAST_PRFX, _GLOBAL0_UCAST_PRFXLEN));
+	},
+	{
+		payload = data8;
+	}
+)
+
+
+
+//--------------------------------------------------------------------//
+//                                                                    //
+// Echo Reply Message                                                 //
+//                                                                    //
+//--------------------------------------------------------------------//
+FEM_icmp6_echo_reply(
+	erep,
+	_HETHER_nut2tn,
+	{
+		_SRC(nut2v6(_GLOBAL0_UCAST_PRFX, _GLOBAL0_UCAST_PRFXLEN));
+		_DST(tn2v6(_GLOBAL1_UCAST_PRFX, _GLOBAL1_UCAST_PRFXLEN));
+	},
+	{
+		payload	= data8;
+	}
+)
+
+
+
+//--------------------------------------------------------------------//
+//                                                                    //
+// Echo Request Message                                               //
+//                                                                    //
+//--------------------------------------------------------------------//
+FEM_icmp6_echo_request_exth(
+	ereq_esp,
+	_HETHER_tn2nut,
+	{
+		_SRC(tn2v6(_GLOBAL1_UCAST_PRFX, _GLOBAL1_UCAST_PRFXLEN));
+		_DST(nut2v6(_GLOBAL0_UCAST_PRFX, _GLOBAL0_UCAST_PRFXLEN));
+	},
+	{
+		header	= _HDR_IPV6_NAME(ereq_esp);
+		exthdr	= ext_esp_sa1;
+		upper	= _ICMPV6_NAME(ereq_esp);
+	},
+	{
+		payload = data8;
+	}
+)
+
+Hdr_ESP ext_esp_sa1 {
+	SPI		= 0x1000;
+	SequenceNumber	= 1;
+	algorithm	= algorithm_sa1;
+}
+
+ESPAlgorithm algorithm_sa1 {
+	crypt	= aesctr_160("ipv6readylogaescin01");
+//	crypt	= des3cbc("ipv6readylogo3descbcin01");
+	auth	= hmacsha1("ipv6readylogsha1in01");
+}
+
+
+
+//--------------------------------------------------------------------//
+//                                                                    //
+// Echo Reply Message                                                 //
+//                                                                    //
+//--------------------------------------------------------------------//
+FEM_icmp6_echo_reply_exth(
+	erep_esp,
+	_HETHER_nut2tn,
+	{
+		_SRC(nut2v6(_GLOBAL0_UCAST_PRFX, _GLOBAL0_UCAST_PRFXLEN));
+		_DST(tn2v6(_GLOBAL1_UCAST_PRFX, _GLOBAL1_UCAST_PRFXLEN));
+	},
+	{
+		header	= _HDR_IPV6_NAME(erep_esp);
+		exthdr	= ext_esp_sa2;
+		upper	= _ICMPV6_NAME(erep_esp);
+	},
+	{
+		payload	= data8;
+	}
+)
+
+Hdr_ESP ext_esp_sa2 {
+	SPI		= 0x2000;
+	SequenceNumber	= any;
+	algorithm	= algorithm_sa2;
+}
+
+ESPAlgorithm algorithm_sa2 {
+	crypt	= aesctr_160("ipv6readylogaescout1");
+	auth	= hmacsha1("ipv6readylogsha1out1");
+//	auth	= hmacsha1("ipv6readylogsha1out1", 31337);	// ESN
+}
+
+
+
+//--------------------------------//
+// Data                           //
+//--------------------------------//
+Payload data8 {
+//	data = repeat(0x00, 22);
+	data = repeat(0x00, 8);
+}

@@ -1,0 +1,296 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+# Yokogawa Electric Corporation, YDC Corporation,
+# IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/manual/dhcp6c.rmt,v 1.10 2010/03/24 02:42:35 mario Exp $
+#
+########################################################################
+use V6evalRemote;
+use File::Basename;
+
+rArg() || goto error;
+$type=rType();
+
+
+my $basename	= basename($0,'.rmt');
+my $prompt	= "$basename> ";
+
+print "\n";
+
+#$type = $V6evalTool::NutDef{Type};
+ 
+if(defined($rOpt_start)){
+	
+print "lio_start". "\n"; 
+	print $prompt. "According to the following prompt to configure your DHCPv6 Client:\n\n";
+	############################################################################
+	#
+	# Information-request
+	#   RFC 3633 stateless DHCPv6 service;
+	#   RFC 3315 stateful  DHCPv6 service;
+	#
+	############################################################################
+	if (defined($rOpt_inforeq)) {
+		
+		print $prompt. "DHCPv6 Client should send Information-request Message \n";
+		
+		if(defined $rOpt_dns){
+			print $prompt."Please set DNS Recursive Name Server Option\n";
+		}
+		if(defined $rOpt_lst){
+			print $prompt."Please set DNS Search List Option\n";
+		}
+		if(defined $rOpt_sip){
+			print $prompt."Please set SIP Servers IPv6 Address List Option\n";
+		}
+	}
+	else{
+	
+		print $prompt. "DHCPv6 Client should send Solicit message \n";
+		if (defined($rOpt_rapidcommit)){
+			print $prompt. "Please set Rapidcommit Option,\n";
+		}
+		if(defined $rOpt_tempaddress){
+			print $prompt. "Please set IA-TA Option,\n";
+		}
+		if(defined $rOpt_unicast){
+			print $prompt. "Please set to support Unicast Option,\n";
+		}
+		if(defined $rOpt_iana){
+			print $prompt. "Please set to carry IA-NA Options,\n";
+		}
+		if(defined $rOpt_IA){
+			print $prompt. "Please set to carry 2 IA-NA Options,\n";
+		}
+		if(defined $rOpt_dns){
+			print $prompt. "Please set to carry DNS Recursive Name Server Option,\n";
+		}
+		if(defined $rOpt_lst){
+			print $prompt. "Please set to carry DNS Search List Option,\n";
+		}
+		#if(defined $rOpt_sip){
+		#	print $prompt.
+		#	"According to RFC3736,\n".
+		#	"Information-Request should be with SIP Servers IPv6 Address List Option\n";
+		#}
+		if(defined $rOpt_Mpd){
+			print $prompt. "Please set to carry 2 IA_PD options,\n";
+		}
+		if(defined $rOpt_prefix){
+			print $prompt. "Please set to carry IA_PD option and IA_PD Prefix option,\n";
+		}
+		if(defined $rOpt_address){
+			print $prompt. "Please set to carry optional IAAddress Option,\n";
+			if(defined $rOpt_preferlifetime){
+				print $prompt. "Please set Preferred-life time,\n";
+			}
+			if(defined $rOpt_validlifetime){
+				print $prompt. "Please set Valid-life time,\n";
+			}
+		}
+	}
+	
+	if(defined($rOpt_authentication)){
+		print  $prompt."Please set Authentication protocol:";
+		if($rOpt_authentication eq "delayed"){
+			print  $prompt."Delayed Authentication Protocol.\n";
+		}
+		elsif($rOpt_authentication eq "reconfigure"){
+			print  $prompt."Reconfigure Key Authentication Protocol.\n";
+		}
+		else{
+			print  $prompt."$rOpt_authentication.\n";
+		}
+		print $prompt."Please set the Authentication parameter.\n";
+		print $prompt."\tREALM:  $rOpt_auth_realm\n";
+		print $prompt."\tKey ID: $rOpt_auth_keyid\n";
+		print $prompt."\tShared Secret Key: $rOpt_auth_sharedsecretkey\n";
+	}
+
+	print $prompt."Please start NUT (DHCPv6 Client) manually, after press enter key\n\n".
+	"Please start DHCPv6 after press enter key within 5 seconds. \a\n";
+print "lio_stop". "\n"; 
+	<STDIN>;
+}
+
+if($rOpt_stop){
+	print "lio_start". "\n"; 
+	print $prompt. "Stop the DHCPv6 Client! \n".
+	print $prompt. "If NUT has Global address, please remove it. \n".
+	print $prompt. "then press enter key.\a\n";
+	print "lio_stop". "\n"; 
+	<STDIN>;
+}
+if($rOpt_restart){
+	print "lio_start". "\n"; 
+	print $prompt. "Please Reboot DHCPv6 Client:\n".
+	"According to RFC3315, you can choose as follows:\n".
+	"   1. The client reboots. \n".
+	"   2. The client is physically connected to a wired connection. \n".
+	"   3. The client returns from sleep mode. \n".
+	"   4. The client using a wireless technology changes access points. \n".
+	" The Client should send Confirm message.\n".
+	" Please Note the situation that IA_PD option test is performed. \n".
+	" In that situation, Requesting Router will send Rebind message. \n\n".
+	" then press enter key. \a\n";
+	print "lio_stop". "\n"; 
+	<STDIN>;
+}
+if($rOpt_release){
+	print "lio_start". "\n"; 
+	print $prompt. "Please Release Address and information:\n".
+	"According to RFC3315, \n".
+	"   A client sends a Release message to the server\n".
+        "   that assigned addresses to the client to \n".
+        "   indicate that the client will no longer use one\n".
+        "   or more of the assigned addresses.\n";
+	print $prompt. "In order to make client sent Release message. \n".
+	" then press enter key. \a\n";
+	print "lio_stop". "\n"; 
+	<STDIN>;
+}
+if($rOpt_ifdown){
+	print "lio_start". "\n"; 
+	print $prompt. "Please down interface of  DHCPv6 Client:\n".
+	" The Client will be required to send Confirm message when the intaface is upped.\n".
+	" then press enter key. \a\n";
+	print "lio_stop". "\n"; 
+	<STDIN>;
+}
+if($rOpt_ifup){
+	print "lio_start". "\n"; 
+	print $prompt. "Please up interface of  DHCPv6 Client:\n".
+	" The Client should send Confirm message.\n".
+	" You may use another way to send Confirm message .\n".
+	" then press enter key. \a\n";
+	print "lio_stop". "\n"; 
+	<STDIN>;
+}
+
+#if($rOpt_pingDNS){
+#	print $prompt. "Please use Ping6-like program to test any DNS Name:";
+#	print $prompt. "According to RFC3736, \n".
+#	"Client will first search DNS Name Server \n".
+#	"and will send Echo Request to DNS Name Server(3ffe:501:ffff:100::100). \n";
+#	print $prompt. "then press enter key. \a\n";
+#	<STDIN>;
+#}
+
+exit($V6evalRemote::exitPass);
+
+error:
+    exit($V6evalRemote::exitFail);
+
+notsupported:
+    exit($V6evalRemote::exitNS);
+
+########################################################################
+__END__
+
+=head1 NAME
+
+B<dhcp6c.rmt> - set/start/stop/release dhcp client
+
+=head1 SYNOPSIS
+
+B<dhcp6c.rmt> [-commonoption ...] set [rapidcommit|inforeq]
+              link0=LINK0_DEV link1=LINK1_DEV
+              [timeout=SEC_VALUE]
+
+B<dhcp6c.rmt> [-commonoption ...] start [rapidcommit|inforeq]
+              link0=LINK0_DEV link1=LINK1_DEV
+              [timeout=SEC_VALUE]
+
+B<dhcp6c.rmt> [-commonoption ...] stop
+B<dhcp6c.rmt> [-commonoption ...] release
+
+=head1 DESCRIPTION
+
+B<dhcp6c.rmt set> sets dhcp client parameters.
+B<dhcp6c.rmt start> starts dhcp client process associating iapd.
+B<dhcp6c.rmt start rapidcommit> starts dhcp client process using rapid commit option.
+B<dhcp6c.rmt start inforeq> starts dhcp client process to get configuration parameter.
+B<dhcp6c.rmt stop> stop dhcp client process.
+B<dhcp6c.rmt release> release delegated prefix information.
+
+B<timeout>: Default timeout value is five seconds.
+B<common options>: Please see ``preldoc V6evalRemote''.
+B<link0> and B<link1>: NUT's network i/f names for Link0 and Link1.
+B<dhcp6c.rmt start> can specifies the following DHCP parameters whose
+values are depend on dhcp6c of kame-freebsd now.
+
+  ---------------+----------------------------------
+  left value      right value
+  ---------------+----------------------------------
+  iaid            0
+  slaid           1
+  slalen          16
+  requestoptions  domain-name-servers
+  ---------------+----------------------------------
+
+B<dhcp6c.rmt stop> stop to dhcp client process.
+B<timeout>: Default timeout value is five seconds.
+B<common options>: Please see ``preldoc V6evalRemote''.
+
+=head1 RETURN VALUES
+
+B<dhcp6c.rmt> exits with one of the following values:
+ 0      command completed successfully
+ not 0  command failed
+
+=head1 BUGS
+
+B<dhcp6c.rmt> can run for kame-freebsd only.
+Current version of the command needs B<kame-freebsd.rtadvd.tmpl>
+on the current directory.
+
+=head1 SEE ALSO
+
+ perldoc V6evalRemote
+ dhcp6c.conf(5) for kame-freebsd
+ RFC3315.txt
+ RFC3319.txt
+ RFC3633.txt
+ RFC3646.txt
+ RFC3736.txt
+
+=cut

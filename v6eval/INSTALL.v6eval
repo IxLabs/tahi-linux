@@ -1,0 +1,415 @@
+		Installing IPv6 Conformance Test Tool
+
+			     TAHI Project
+
+		     $Date: 2010/03/30 07:39:49 $
+
+
+
+Terminology
+===========
+
+Tester Node (TN)
+	A tester node for the conformance tests.
+
+Node Under Test (NUT)
+	A testee node for the conformance tests.
+
+Network Under Test
+	The network where the conformance tests are executed.
+
+Tester Interface
+	The network interface of TN
+	hooked up to the Network Under Test.
+
+Interface Under Test
+	The network interface of NUT
+	hooked up to the Network Under Test.
+
+
+
+Prerequisites
+=============
+
+Prerequisites for TN:
+
+	- The package supports
+		FreeBSD/i386 7.3-RELEASE or higher
+
+
+
+Installing the package onto TN
+================================================================
+
+1. Extracting the package
+
+	% cd $SOMEWHERE
+	% tar zxvf v6eval-X.Y.Z.tar.gz
+
+2. Installing perl-related modules
+
+	The package requires the below-listed perl5 modules.
+
+		- Expect
+		- IO-Stty
+		- IO-Tty
+		- Digest-MD5
+		- YAML
+
+	you can install them from the package's ports directory.
+
+		# (cd /usr/ports/lang/p5-Expect && make install)
+		# (cd /usr/ports/security/p5-Digest-MD5 && make install)
+		# (cd /usr/ports/textproc/p5-YAML && make install)
+
+3. Compiling & installing the tool
+
+	Install the Tool in /usr/local/v6eval directory.
+
+		% cd $SOMEWHERE/v6eval-X.Y.Z
+		% make
+		# make install
+
+4. Make bpf special device.
+
+		# vi /etc/rc.conf
+		# vi /etc/devfs.rules
+
+		/etc/rc.conf
+		----------------------------------------------------------------
+		devfs_system_ruleset="devfsrules_unhide_bpf"
+		----------------------------------------------------------------
+
+		/etc/devfs.rules
+		----------------------------------------------------------------
+		[devfsrules_unhide_bpf=1025]
+		add path 'bpf*' user root group wheel mode 0660 unhide
+		----------------------------------------------------------------
+
+	The user who executes conformance test need to belong in wheel group.
+
+		# vi /etc/group
+
+5. Configure serial line
+
+		# touch /var/log/aculog
+		# chown uucp:dialer /var/log/aculog
+		# chmod 660 /var/log/aculog
+
+	The user who executes conformance test need to belong in dialer group.
+
+		# vi /etc/group
+
+6. Interface configuration
+
+	disable IPv6 support on network interface used in testing.
+
+		# vi /etc/rc.conf
+
+		/etc/rc.conf
+		----------------------------------------------------------------
+		ipv6_enable="NO"
+		----------------------------------------------------------------
+
+
+	At least, one or two network interfaces used in testing
+	must be 'up' status.
+
+		# vi /etc/rc.conf
+
+		/etc/rc.conf
+		----------------------------------------------------------------
+		ifconfig_<Link0_device_name>="up"
+		----------------------------------------------------------------
+		If NUT is a router, you need to specify also Link1.
+
+
+
+Configuration of TN
+===================
+
+1. Configuration of the network
+
+Hook up the Tester Interface of TN to the Network Under Test.
+Tester Interface of TN can be configured for IPv4 and for IPv6 as well.
+Hook up the Interface Under Test of NUT to the Network Under Test.
+Interface Under Test of NUT must be configured for IPv6, while it can be
+configured for IPv6 too.
+
+Make sure that any other nodes are not hooked up to the network
+because their packets would disturb the conformance tests.
+
+Example:
+
+	1) NUT is a host or special
+
+		TN			NUT
+		 | Tester I/f: de0	 | I/f Under Test: fxp0
+		 |			 |
+		-+-----------------------+- Link0
+		     Network Under Test
+
+	2) NUT is a router
+
+		     Network Under Test
+		-+-----------------------+- Link1
+		 |			 |
+		 | Tester I/f: de1	 | I/f Under Test: fxp1
+		TN			NUT
+		 | Tester I/f: de0	 | I/f Under Test: fxp0
+		 |			 |
+		-+-----------------------+- Link0
+		     Network Under Test
+
+This document assumes that NUT is a host implementation.
+
+
+
+2. Software Configuration
+ 
+You must write two configuration files tn.def and nut.def in
+/usr/local/v6eval/etc/. There are sample files tn.def.sample and
+nut.def.sample in the directory.
+
+These files have the following format:
+	- Empty lines and lines starting with '#' are comments.
+	- Otherwise, a line is in the format "keyword arguments".
+
+(i) Format of tn.def
+
+tn.def defines information about TN.
+The file has the following entries:
+
+	RemoteCuPath	Specifies cu command path.
+
+			Default: /usr/bin/cu
+
+	RemoteDevice	Specifies the device to be used for remote control.
+
+			Default: cuaa0
+
+			If TN is FreeBSD/i386 6.0-RELEASE or higher,
+			you may need to specify cuad0 as RemoteDevice.
+
+	RemoteDebug	Specifies debug level for remote control.
+			Usually, you don't need to edit this part.
+
+			Default: 0
+
+	RemoteLog	Specifies log level for remote control.
+			0: don't logged serial line message
+			1: logged serial line message
+			Some of test need to edit this part.
+
+			Default: 0
+
+	RemoteSpeed	Specifies interval that characters are sent at.
+
+			Default: 0 (sec.)
+
+	RemoteLogout	Enable/disable logout
+			0: logout is omitted
+			1: do logout every remote command invocation
+			Usually, you don't need to edit this part.
+
+			Default: 0
+
+	RemoteMethod	Enable/disable remote command invocation.
+			serial: enable it.
+			none:   disable it.
+			Usually, you don't need to edit this part.
+
+			Default: serial
+
+	LinkX		Specifies interface name and MAC address
+			of a Tester Interface:
+
+			Link0   de0     00:00:00:00:01:00
+			~~~~~   ~~~     ~~~~~~~~~~~~~~~~~
+			(1)     (2)     (3)
+
+			(1): a link name.
+			     Note that the current version of the Tool
+			     supports only "Link0" and "Link1" for (1),
+			     and does not accept any other entry.
+
+			(2): the EXACT name of a Tester Interface.
+
+			(3): a BOGUS ether source address of
+			     a Tester Interface.
+			     Note that (3) must be different from
+			     the TN's interface's MAC address.
+			     Usually, you don't need to edit this part.
+
+			If NUT is a router, you need to specify also Link1.
+
+(ii) Format of nut.def
+
+nut.def file defines information about NUT.
+The file has the following entries:
+
+	System		Specifies system type of NUT. The Tool
+			switches remote control methods by the entry.
+
+			Default: manual
+
+	TargetName	Specifies system information of NUT such as 
+			version and CPU type, etc. This entry will be
+			displayed in test result file.
+
+			Default: null
+
+	HostName	Specifies the name of NUT.
+
+			Default: null
+
+	Type		Specifies NUT type.
+			Either "host" or "router" or "special" is acceptable.
+
+			It can not be omitted.
+
+			Default: host
+
+	User		Specifies the account name of NUT's super user.
+			if you select manual as "System", you don't care "User"
+
+			Default: root
+
+	Password	Specifies the password of NUT's super user.
+			if you select manual as "System",
+			you don't need to care "Password"
+
+			Default: v6eval
+
+	LinkX		Specifies interface name and MAC address
+			of a Interface Under Test:
+
+			Link0   fxp0    00:00:00:00:01:00
+			~~~~~   ~~~~    ~~~~~~~~~~~~~~~~~
+			(1)     (2)     (3)
+
+			(1): a link name.
+			     Note that the current version of the Tool
+			     supports only "Link0" and "Link1" for (1),
+			     and does not accept any other entry.
+
+			(2): the EXACT name of a Interface Under Test.
+
+			(3): The EXACT ether source address of
+			     a Interface Under Test.
+			     Note that (3) must be same with
+			     the NUT's interface's MAC address.
+
+			If NUT is a router, you need to configure also Link1.
+
+(iii) Customizing tn.def
+
+Copy sample tn.def to tn.def. Then, adjust Link0 and Link1 entry
+in the file.
+
+	# cd /usr/local/v6eval/etc
+	# cp tn.def.sample tn.def
+	# vi tn.def
+
+For example, if TN has NE2000 compatible NIC for Tester Interface,
+you must set "ed0" instead of "de0".
+
+	sample: /usr/local/v6eval/etc/tn.def
+	================================================================
+	...
+	Link0 de0 00:00:00:00:01:00
+	...   ~~~ change i/f name to the exact one 
+	================================================================
+	If NUT is a router, you need to specify also Link1.
+
+	You MUST define BOGUS ether address.
+
+	Usually, you don't need to edit ether address.
+	This means it's enough to edit just only I/F name.
+
+If you want to execute only ipv6 test scripts
+exclude ipsec4, ipsec4-udp or tunnel,
+you can filter extra packets.
+
+	sample: /usr/local/v6eval/etc/tn.def
+	----------------------------------------------------------------
+	--- tn.def.sample       Tue Oct 14 11:52:51 2003
+	+++ tn.def      Tue Oct 14 11:53:00 2003
+	@@ -14,7 +14,7 @@
+	 RemoteSpeed    0
+	 RemoteLogout   0
+	 RemoteMethod   serial
+	-#filter        ipv6
+	+filter ipv6
+	 
+	 #linkname      interface       BOGUS ether source address
+	 #              name            of the Tester Interface
+	----------------------------------------------------------------
+
+(iv) Customizing nut.def
+
+Copy sample nut.def to nut.def. Then, adjust Link0 and Link1 entry in the file.
+
+	# cd /usr/local/v6eval/etc
+	# cp nut.def.sample nut.def
+	# vi nut.def
+
+For example, if NUT has NE2000 compatible NIC for Interface
+Under Test, you must set "ed0" instead of "fxp0". Its MAC address
+must be set to the exact one too.
+
+	sample: /usr/local/v6eval/etc/nut.def
+	================================================================
+	...
+	Link0 fxp0 00:00:92:a7:6d:f5
+	...   ~~~~ ~~~~~~~~~~~~~~~~~ Change i/f name and address
+	                             to the exact ones.
+	================================================================
+
+(v) NUT setup
+
+	If NUT is a router, you have to configure network prefixes.
+		Link0: 3ffe:501:ffff:100::/64
+		Link1: 3ffe:501:ffff:101::/64
+
+	And you also have to configure network addresses using interface ID.
+	All of the tests assume that NUT has addresses based on MAC address.
+
+	if you want to more information,
+	please refer to INSTALL.ct (in ct package).
+
+
+Running samples
+===============
+
+The package does not contain IPv6 Conformance Test, but only some of
+its samples. After running samples, you can see the report in the directory
+by Web Browser. Since they are samples, you do not have to worry even
+when you see the word "FAIL" in the report.
+
+	$ cd $SOMEWHERE/v6eval-X.Y.Z/sample
+	$ /usr/local/v6eval/bin/autorun INDEX
+	$ netscape index.html
+
+
+
+Have a problem?
+===============
+
+Can you execute following command?
+	$ tcpdump -i <Link0_device>
+
+Can you execute following command?
+	$ cu -l /dev/cuaa0
+
+	Can you see login prompt of NUT?
+
+
+
+Running Conformance Test
+========================
+
+To run IPv6 Conformance Test, please refer to INSTALL.ct (in ct package).
+
+
+                                                        [end of INSTALL]

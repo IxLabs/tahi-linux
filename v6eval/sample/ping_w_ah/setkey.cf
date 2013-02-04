@@ -1,0 +1,9 @@
+spdflush;
+flush;
+add fe80:1::200:ff:fe00:100 fe80:1::200:2ff:fe00:2632 any 1000 -p ah -A hmac-md5 "hagehogehogehoge";
+add fe80:1::200:ff:fe00:100 fe80:1::200:2ff:fe00:2632 any 2000 -p ah -A hmac-sha1 "hogehagehogehogehoge";
+add fe80:1::200:2ff:fe00:2632 fe80:1::200:ff:fe00:100 any 1000 -p ah -A hmac-md5 "hagehogehogehoge";
+spdadd fe80:1::200:2ff:fe00:2632 fe80:1::200:ff:fe00:100 any -P ipsec ah/require;
+
+dump;
+spddump;

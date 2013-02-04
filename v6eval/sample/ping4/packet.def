@@ -1,0 +1,155 @@
+//
+// Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+// Yokogawa Electric Corporation, YDC Corporation,
+// IPA (Information-technology Promotion Agency, Japan).
+// All rights reserved.
+// 
+// Redistribution and use of this software in source and binary forms, with 
+// or without modification, are permitted provided that the following 
+// conditions and disclaimer are agreed and accepted by the user:
+// 
+// 1. Redistributions of source code must retain the above copyright 
+// notice, this list of conditions and the following disclaimer.
+// 
+// 2. Redistributions in binary form must reproduce the above copyright 
+// notice, this list of conditions and the following disclaimer in the 
+// documentation and/or other materials provided with the distribution.
+// 
+// 3. Neither the names of the copyrighters, the name of the project which 
+// is related to this software (hereinafter referred to as "project") nor 
+// the names of the contributors may be used to endorse or promote products 
+// derived from this software without specific prior written permission.
+// 
+// 4. No merchantable use may be permitted without prior written 
+// notification to the copyrighters. However, using this software for the 
+// purpose of testing or evaluating any products including merchantable 
+// products may be permitted without any notification to the copyrighters.
+// 
+// 
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+// CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+// BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+// FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+// COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+// CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+// THE POSSIBILITY OF SUCH DAMAGE.
+//
+
+#define TNIP4  "192.168.0.2"
+#define NUTIP4 "192.168.0.1"
+
+//======================================================================
+// Frame
+Frame_Ether _ping4 {
+	header=eth_auto;
+	packet=ip_ping4;
+}
+//----------------------------------------------------------------------
+Frame_Ether _reply4 {
+	header=eth_auto;
+	packet=ip_reply4;
+}
+//----------------------------------------------------------------------
+Frame_Ether _arp1 {
+	header=eth_auto2bc;
+	packet=_arp_req;
+}
+//----------------------------------------------------------------------
+Frame_Ether _arp2 {
+	header=eth_auto;
+	packet=_arp_rep;
+}
+//======================================================================
+// Ether
+Hdr_Ether eth_auto {
+//	SourceAddress=auto;
+//	DestinationAddress=auto;
+//	Type=auto;
+}
+//----------------------------------------------------------------------
+Hdr_Ether eth_auto2bc {
+//	SourceAddress=auto;
+	DestinationAddress=ether("ff:ff:ff:ff:ff:ff");
+//	Type=auto;
+}
+
+//======================================================================
+// Packet IPv4
+Packet_IPv4 ip_ping4 {
+	header=v4tn2nut;
+	upper=icmp_ping;
+}
+//----------------------------------------------------------------------
+Packet_IPv4 ip_reply4 {
+	header=v4nut2tn;
+	upper=icmp_reply;
+}
+
+//======================================================================
+// IPv4
+Hdr_IPv4 v4tn2nut {
+	SourceAddress=v4(TNIP4);
+	DestinationAddress=v4(NUTIP4);
+}
+//----------------------------------------------------------------------
+Hdr_IPv4 v4nut2tn {
+	DestinationAddress=v4(TNIP4);
+	SourceAddress=v4(NUTIP4);
+}
+
+//======================================================================
+ICMPv4_EchoRequest icmp_ping {
+//	Type=128;
+//	Code=0;
+//	Checksum=auto;
+//	Identifier=0;
+//	SequenceNumber=0;
+	payload=apl;
+}
+//----------------------------------------------------------------------
+ICMPv4_EchoReply icmp_reply {
+//	Type=129;
+//	Code=0;
+//	Checksum=auto;
+//	Identifier=0;
+//	SequenceNumber=0;
+	payload=apl;
+}
+
+//======================================================================
+// Data
+Payload apl {
+	data={0xb9,0xf9,0xa2,0x36,0x78,0x02,0x0d,0x00};
+	data={0xb9,0xf9,0xa2,0x36,0x78,0x02,0x0d,0x00};
+	data={0xb9,0xf9,0xa2,0x36,0x78,0x02,0x0d,0x00};
+}
+
+//======================================================================
+// Pacekt ARP
+Packet_ARP _arp_req {
+	header=_arp_req_hdr;
+}
+//----------------------------------------------------------------------
+Packet_ARP _arp_rep {
+	header=_arp_rep_hdr;
+}
+
+//======================================================================
+//  ARP
+Hdr_ARP _arp_req_hdr {
+	SenderPAddr=v4(NUTIP4);
+	TargetPAddr=v4(TNIP4);
+	TargetHAddr=ether("00:00:00:00:00:00");
+}
+//----------------------------------------------------------------------
+Hdr_ARP _arp_rep_hdr {
+	SenderPAddr=v4(TNIP4);
+	TargetPAddr=v4(NUTIP4);
+	TargetHAddr=tnether();
+}

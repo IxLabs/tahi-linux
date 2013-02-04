@@ -1,0 +1,389 @@
+//
+// Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+// Yokogawa Electric Corporation, YDC Corporation,
+// IPA (Information-technology Promotion Agency, Japan).
+// All rights reserved.
+// 
+// Redistribution and use of this software in source and binary forms, with 
+// or without modification, are permitted provided that the following 
+// conditions and disclaimer are agreed and accepted by the user:
+// 
+// 1. Redistributions of source code must retain the above copyright 
+// notice, this list of conditions and the following disclaimer.
+// 
+// 2. Redistributions in binary form must reproduce the above copyright 
+// notice, this list of conditions and the following disclaimer in the 
+// documentation and/or other materials provided with the distribution.
+// 
+// 3. Neither the names of the copyrighters, the name of the project which 
+// is related to this software (hereinafter referred to as "project") nor 
+// the names of the contributors may be used to endorse or promote products 
+// derived from this software without specific prior written permission.
+// 
+// 4. No merchantable use may be permitted without prior written 
+// notification to the copyrighters. However, using this software for the 
+// purpose of testing or evaluating any products including merchantable 
+// products may be permitted without any notification to the copyrighters.
+// 
+// 
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+// CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+// BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+// FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+// COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+// CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+// THE POSSIBILITY OF SUCH DAMAGE.
+//
+// $TAHI: v6eval/include/stdaddr.def,v 1.17 2002/12/02 12:31:28 akisada Exp $
+//
+//    stdaddr.def      Standard Address definiton 
+//
+
+#ifndef _STD_ADDR_DEF_
+#define _STD_ADDR_DEF_
+
+
+//=======================================================================
+//    Address and Prefix definition
+//
+//    definition style is ...
+//        #define _scope_type_cast_what  "...."
+//        where
+//            scope:=  GLOBAL | SLOCAL | LLOCAL | NLOCAL | none
+//                     | GLOBAL[0-9]? | SLOCAL[0-9]?
+//            type:=   ALLNODES | ALLROUTERS | SUBNETROUTER | SOLNODE
+//                     UNSPEC | LOOPBACK | none
+//            cast:=   UCAST | ACAST | MCAST | none
+//            what:=   ADDR | PRFX | PRFXLEN
+//
+
+//------------------------------
+// Standard address definition
+//------------------------------
+
+// Special Type
+#define _UNSPEC_ADDR                     "::0"
+#define _LOOPBACK_ADDR                   "::1"
+
+// Node-Local
+#define _NLOCAL_ALLNODES_MCAST_ADDR      "FF01:0:0:0:0:0:0:1"
+#define _NLOCAL_ALLROUTERS_MCAST_ADDR    "FF01:0:0:0:0:0:0:2"
+
+// Link-Local
+#define _LLOCAL_UCAST_PRFX               "FE80::"
+#define _LLOCAL_UCAST_PRFXLEN            64
+#define _LLOCAL_ALLNODES_MCAST_ADDR      "FF02:0:0:0:0:0:0:1"
+#define _LLOCAL_ALLROUTERS_MCAST_ADDR    "FF02:0:0:0:0:0:0:2"
+#define _LLOCAL_ALLRIPROUTERS_MCAST_ADDR	"FF02:0:0:0:0:0:0:9"
+#define _LLOCAL_ALLDHCPAGENTS_MCAST_ADDR	"FF02:0:0:0:0:0:1:2"
+#define _LLOCAL_SUBNETROUTER_ACAST_ADDR		"FF02:0:0:0:0:0:0:0"
+#define _LLOCAL_SOLNODE_MCAST_PRFX		"FF02:0:0:0:0:1:FF00:0000"
+#define _LLOCAL_SOLNODE_MCAST_PRFXLEN    104
+
+// Site-Local
+#define _SLOCAL_UCAST_PRFX		"FEC0::"
+#define _SLOCAL_ALLROUTERS_MCAST_ADDR	"FF05:0:0:0:0:0:0:2"
+#define _SLOCAL_ALLDHCPSERVERS_MCAST_ADDR	"FF05:0:0:0:0:0:1:3"
+
+// Link-Local No.0 prefix and virtual test node address
+#define _LLOCAL0_UCAST_PRFX              "FE80::"
+#define _LLOCAL0_UCAST_PRFXLEN           64
+// unicast addr
+#define _LLOCAL0A0N_UCAST_ADDR           "FE80::200:ff:fe00:a0a0"
+#define _LLOCAL0A1N_UCAST_ADDR           "FE80::200:ff:fe00:a1a1"
+#define _LLOCAL0A2N_UCAST_ADDR           "FE80::200:ff:fe00:a2a2"
+#define _LLOCAL0A3N_UCAST_ADDR           "FE80::200:ff:fe00:a3a3"
+// anycast addr
+#define _LLOCAL0A0N_ACAST_ADDR           "FE80::200:ff:fe00:a0a0"
+
+// Site-Local No.0 prefix and virtual test node address
+#define _SLOCAL0_UCAST_PRFX              "FEC0::"
+#define _SLOCAL0_UCAST_PRFXLEN           64
+// unicast addr
+#define _SLOCAL0A0N_UCAST_ADDR           "FEC0::200:ff:fe00:a0a0"
+#define _SLOCAL0A1N_UCAST_ADDR           "FEC0::200:ff:fe00:a1a1"
+#define _SLOCAL0A2N_UCAST_ADDR           "FEC0::200:ff:fe00:a2a2"
+#define _SLOCAL0A3N_UCAST_ADDR           "FEC0::200:ff:fe00:a3a3"
+// anycast addr
+#define _SLOCAL0A0N_ACAST_ADDR           "FEC0::200:ff:fe00:a0a0"
+
+// Global No.0 prefix and virtual test node address
+#define _GLOBAL0_UCAST_PRFX              "3ffe:501:ffff:100::"
+#define _GLOBAL0_UCAST_PRFXLEN           64
+// unicast addr
+#define _GLOBAL0A0N_UCAST_ADDR           "3ffe:501:ffff:100:200:ff:fe00:a0a0"
+#define _GLOBAL0A1N_UCAST_ADDR           "3ffe:501:ffff:100:200:ff:fe00:a1a1"
+#define _GLOBAL0A2N_UCAST_ADDR           "3ffe:501:ffff:100:200:ff:fe00:a2a2"
+#define _GLOBAL0A3N_UCAST_ADDR           "3ffe:501:ffff:100:200:ff:fe00:a3a3"
+// anycast addr
+#define _GLOBAL0A0N_ACAST_ADDR           "3ffe:501:ffff:100:200:ff:fe00:a0a0"
+
+// Other global prefixes
+#define	_GLOBAL1_UCAST_PRFX		"3ffe:501:ffff:101::"
+#define _GLOBAL1_UCAST_PRFXLEN           64
+// unicast addr
+#define _GLOBAL1A0N_UCAST_ADDR           "3ffe:501:ffff:101:200:ff:fe00:a0a0"
+#define _GLOBAL1A1N_UCAST_ADDR           "3ffe:501:ffff:101:200:ff:fe00:a1a1"
+#define _GLOBAL1A2N_UCAST_ADDR           "3ffe:501:ffff:101:200:ff:fe00:a2a2"
+#define _GLOBAL1A3N_UCAST_ADDR           "3ffe:501:ffff:101:200:ff:fe00:a3a3"
+// anycast addr
+#define _GLOBAL1A0N_ACAST_ADDR           "3ffe:501:ffff:101:200:ff:fe00:a0a0"
+
+#define	_GLOBAL2_UCAST_PRFX		"3ffe:501:ffff:102::"
+#define _GLOBAL2_UCAST_PRFXLEN           64
+// unicast addr
+#define _GLOBAL2A0N_UCAST_ADDR           "3ffe:501:ffff:102:200:ff:fe00:a0a0"
+#define _GLOBAL2A1N_UCAST_ADDR           "3ffe:501:ffff:102:200:ff:fe00:a1a1"
+#define _GLOBAL2A2N_UCAST_ADDR           "3ffe:501:ffff:102:200:ff:fe00:a2a2"
+#define _GLOBAL2A3N_UCAST_ADDR           "3ffe:501:ffff:102:200:ff:fe00:a3a3"
+// anycast addr
+#define _GLOBAL2A0N_ACAST_ADDR           "3ffe:501:ffff:102:200:ff:fe00:a0a0"
+
+#define	_GLOBAL3_UCAST_PRFX		"3ffe:501:ffff:103::"
+#define _GLOBAL3_UCAST_PRFXLEN           64
+// unicast addr
+#define _GLOBAL3A0N_UCAST_ADDR           "3ffe:501:ffff:103:200:ff:fe00:a0a0"
+#define _GLOBAL3A1N_UCAST_ADDR           "3ffe:501:ffff:103:200:ff:fe00:a1a1"
+#define _GLOBAL3A2N_UCAST_ADDR           "3ffe:501:ffff:103:200:ff:fe00:a2a2"
+#define _GLOBAL3A3N_UCAST_ADDR           "3ffe:501:ffff:103:200:ff:fe00:a3a3"
+// anycast addr
+#define _GLOBAL3A0N_ACAST_ADDR           "3ffe:501:ffff:103:200:ff:fe00:a0a0"
+
+#define	_GLOBAL4_UCAST_PRFX		"3ffe:501:ffff:104::"
+#define _GLOBAL4_UCAST_PRFXLEN           64
+// unicast addr
+#define _GLOBAL4A0N_UCAST_ADDR           "3ffe:501:ffff:104:200:ff:fe00:a0a0"
+#define _GLOBAL4A1N_UCAST_ADDR           "3ffe:501:ffff:104:200:ff:fe00:a1a1"
+#define _GLOBAL4A2N_UCAST_ADDR           "3ffe:501:ffff:104:200:ff:fe00:a2a2"
+#define _GLOBAL4A3N_UCAST_ADDR           "3ffe:501:ffff:104:200:ff:fe00:a3a3"
+// anycast addr
+#define _GLOBAL4A0N_ACAST_ADDR           "3ffe:501:ffff:104:200:ff:fe00:a0a0"
+
+#define	_GLOBAL5_UCAST_PRFX		"3ffe:501:ffff:105::"
+#define _GLOBAL5_UCAST_PRFXLEN           64
+// unicast addr
+#define _GLOBAL5A0N_UCAST_ADDR           "3ffe:501:ffff:105:200:ff:fe00:a0a0"
+#define _GLOBAL5A1N_UCAST_ADDR           "3ffe:501:ffff:105:200:ff:fe00:a1a1"
+#define _GLOBAL5A2N_UCAST_ADDR           "3ffe:501:ffff:105:200:ff:fe00:a2a2"
+#define _GLOBAL5A3N_UCAST_ADDR           "3ffe:501:ffff:105:200:ff:fe00:a3a3"
+// anycast addr
+#define _GLOBAL5A0N_ACAST_ADDR           "3ffe:501:ffff:105:200:ff:fe00:a0a0"
+
+#define	_GLOBAL6_UCAST_PRFX		"3ffe:501:ffff:106::"
+#define _GLOBAL6_UCAST_PRFXLEN           64
+// unicast addr
+#define _GLOBAL6A0N_UCAST_ADDR           "3ffe:501:ffff:106:200:ff:fe00:a0a0"
+#define _GLOBAL6A1N_UCAST_ADDR           "3ffe:501:ffff:106:200:ff:fe00:a1a1"
+#define _GLOBAL6A2N_UCAST_ADDR           "3ffe:501:ffff:106:200:ff:fe00:a2a2"
+#define _GLOBAL6A3N_UCAST_ADDR           "3ffe:501:ffff:106:200:ff:fe00:a3a3"
+// anycast addr
+#define _GLOBAL6A0N_ACAST_ADDR           "3ffe:501:ffff:106:200:ff:fe00:a0a0"
+
+#define	_GLOBAL7_UCAST_PRFX		"3ffe:501:ffff:107::"
+#define _GLOBAL7_UCAST_PRFXLEN           64
+// unicast addr
+#define _GLOBAL7A0N_UCAST_ADDR           "3ffe:501:ffff:107:200:ff:fe00:a0a0"
+#define _GLOBAL7A1N_UCAST_ADDR           "3ffe:501:ffff:107:200:ff:fe00:a1a1"
+#define _GLOBAL7A2N_UCAST_ADDR           "3ffe:501:ffff:107:200:ff:fe00:a2a2"
+#define _GLOBAL7A3N_UCAST_ADDR           "3ffe:501:ffff:107:200:ff:fe00:a3a3"
+// anycast addr
+#define _GLOBAL7A0N_ACAST_ADDR           "3ffe:501:ffff:107:200:ff:fe00:a0a0"
+
+#define	_GLOBAL8_UCAST_PRFX		"3ffe:501:ffff:108::"
+#define _GLOBAL8_UCAST_PRFXLEN           64
+// unicast addr
+#define _GLOBAL8A0N_UCAST_ADDR           "3ffe:501:ffff:108:200:ff:fe00:a0a0"
+#define _GLOBAL8A1N_UCAST_ADDR           "3ffe:501:ffff:108:200:ff:fe00:a1a1"
+#define _GLOBAL8A2N_UCAST_ADDR           "3ffe:501:ffff:108:200:ff:fe00:a2a2"
+#define _GLOBAL8A3N_UCAST_ADDR           "3ffe:501:ffff:108:200:ff:fe00:a3a3"
+// anycast addr
+#define _GLOBAL8A0N_ACAST_ADDR           "3ffe:501:ffff:108:200:ff:fe00:a0a0"
+
+#define	_GLOBAL9_UCAST_PRFX		"3ffe:501:ffff:109::"
+#define _GLOBAL9_UCAST_PRFXLEN           64
+// unicast addr
+#define _GLOBAL9A0N_UCAST_ADDR           "3ffe:501:ffff:109:200:ff:fe00:a0a0"
+#define _GLOBAL9A1N_UCAST_ADDR           "3ffe:501:ffff:109:200:ff:fe00:a1a1"
+#define _GLOBAL9A2N_UCAST_ADDR           "3ffe:501:ffff:109:200:ff:fe00:a2a2"
+#define _GLOBAL9A3N_UCAST_ADDR           "3ffe:501:ffff:109:200:ff:fe00:a3a3"
+// anycast addr
+#define _GLOBAL9A0N_ACAST_ADDR           "3ffe:501:ffff:109:200:ff:fe00:a0a0"
+
+#define	_GLOBAL10_UCAST_PRFX		"3ffe:501:ffff:110::"
+#define	_GLOBAL11_UCAST_PRFX		"3ffe:501:ffff:111::"
+#define	_GLOBAL12_UCAST_PRFX		"3ffe:501:ffff:112::"
+#define	_GLOBAL13_UCAST_PRFX		"3ffe:501:ffff:113::"
+#define	_GLOBAL14_UCAST_PRFX		"3ffe:501:ffff:114::"
+#define	_GLOBAL15_UCAST_PRFX		"3ffe:501:ffff:115::"
+#define	_GLOBAL16_UCAST_PRFX		"3ffe:501:ffff:116::"
+#define	_GLOBAL17_UCAST_PRFX		"3ffe:501:ffff:117::"
+#define	_GLOBAL18_UCAST_PRFX		"3ffe:501:ffff:118::"
+#define	_GLOBAL19_UCAST_PRFX		"3ffe:501:ffff:119::"
+#define	_GLOBAL20_UCAST_PRFX		"3ffe:501:ffff:120::"
+#define	_GLOBAL21_UCAST_PRFX		"3ffe:501:ffff:121::"
+#define	_GLOBAL22_UCAST_PRFX		"3ffe:501:ffff:122::"
+#define	_GLOBAL23_UCAST_PRFX		"3ffe:501:ffff:123::"
+#define	_GLOBAL24_UCAST_PRFX		"3ffe:501:ffff:124::"
+#define	_GLOBAL25_UCAST_PRFX		"3ffe:501:ffff:125::"
+#define	_GLOBAL26_UCAST_PRFX		"3ffe:501:ffff:126::"
+#define	_GLOBAL27_UCAST_PRFX		"3ffe:501:ffff:127::"
+#define	_GLOBAL28_UCAST_PRFX		"3ffe:501:ffff:128::"
+#define	_GLOBAL29_UCAST_PRFX		"3ffe:501:ffff:129::"
+
+// IPv4-compatible IPv6 address
+#define	_COMPATIBLE_UCAST_PRFX		"::"
+#define _COMPATIBLE_UCAST_PRFXLEN           96
+// unicast addr
+#define _COMPATIBLE0A1N_UCAST_ADDR           "::192.168.0.1"
+#define _COMPATIBLE0A2N_UCAST_ADDR           "::192.168.0.2"
+#define _COMPATIBLE0A3N_UCAST_ADDR           "::192.168.0.3"
+#define _COMPATIBLE0A4N_UCAST_ADDR           "::192.168.0.4"
+
+#define _COMPATIBLE1A1N_UCAST_ADDR           "::192.168.1.1"
+#define _COMPATIBLE1A2N_UCAST_ADDR           "::192.168.1.2"
+#define _COMPATIBLE1A3N_UCAST_ADDR           "::192.168.1.3"
+#define _COMPATIBLE1A4N_UCAST_ADDR           "::192.168.1.4"
+
+#define _COMPATIBLE2A1N_UCAST_ADDR           "::192.168.2.1"
+#define _COMPATIBLE2A2N_UCAST_ADDR           "::192.168.2.2"
+#define _COMPATIBLE2A3N_UCAST_ADDR           "::192.168.2.3"
+#define _COMPATIBLE2A4N_UCAST_ADDR           "::192.168.2.4"
+
+#define _COMPATIBLE3A1N_UCAST_ADDR           "::192.168.3.1"
+#define _COMPATIBLE3A2N_UCAST_ADDR           "::192.168.3.2"
+#define _COMPATIBLE3A3N_UCAST_ADDR           "::192.168.3.3"
+#define _COMPATIBLE3A4N_UCAST_ADDR           "::192.168.3.4"
+
+#define _COMPATIBLE4A1N_UCAST_ADDR           "::192.168.4.1"
+#define _COMPATIBLE4A2N_UCAST_ADDR           "::192.168.4.2"
+#define _COMPATIBLE4A3N_UCAST_ADDR           "::192.168.4.3"
+#define _COMPATIBLE4A4N_UCAST_ADDR           "::192.168.4.4"
+
+#define _COMPATIBLE5A1N_UCAST_ADDR           "::192.168.5.1"
+#define _COMPATIBLE5A2N_UCAST_ADDR           "::192.168.5.2"
+#define _COMPATIBLE5A3N_UCAST_ADDR           "::192.168.5.3"
+#define _COMPATIBLE5A4N_UCAST_ADDR           "::192.168.5.4"
+
+#define _COMPATIBLE6A1N_UCAST_ADDR           "::192.168.6.1"
+#define _COMPATIBLE6A2N_UCAST_ADDR           "::192.168.6.2"
+#define _COMPATIBLE6A3N_UCAST_ADDR           "::192.168.6.3"
+#define _COMPATIBLE6A4N_UCAST_ADDR           "::192.168.6.4"
+
+#define _COMPATIBLE7A1N_UCAST_ADDR           "::192.168.7.1"
+#define _COMPATIBLE7A2N_UCAST_ADDR           "::192.168.7.2"
+#define _COMPATIBLE7A3N_UCAST_ADDR           "::192.168.7.3"
+#define _COMPATIBLE7A4N_UCAST_ADDR           "::192.168.7.4"
+
+#define _COMPATIBLE8A1N_UCAST_ADDR           "::192.168.8.1"
+#define _COMPATIBLE8A2N_UCAST_ADDR           "::192.168.8.2"
+#define _COMPATIBLE8A3N_UCAST_ADDR           "::192.168.8.3"
+#define _COMPATIBLE8A4N_UCAST_ADDR           "::192.168.8.4"
+
+#define _COMPATIBLE9A1N_UCAST_ADDR           "::192.168.9.1"
+#define _COMPATIBLE9A2N_UCAST_ADDR           "::192.168.9.2"
+#define _COMPATIBLE9A3N_UCAST_ADDR           "::192.168.9.3"
+#define _COMPATIBLE9A4N_UCAST_ADDR           "::192.168.9.4"
+
+//------------------------------
+//  IPv4 address definition
+//------------------------------
+#define _IPV4_UCAST_NETMASK           24
+// unicast addr
+#define _IPV40A1N_UCAST_ADDR                 "192.168.0.1"
+#define _IPV40A2N_UCAST_ADDR                 "192.168.0.2"
+#define _IPV40A3N_UCAST_ADDR                 "192.168.0.3"
+#define _IPV40A4N_UCAST_ADDR                 "192.168.0.4"
+
+#define _IPV41A1N_UCAST_ADDR                 "192.168.1.1"
+#define _IPV41A2N_UCAST_ADDR                 "192.168.1.2"
+#define _IPV41A3N_UCAST_ADDR                 "192.168.1.3"
+#define _IPV41A4N_UCAST_ADDR                 "192.168.1.4"
+
+#define _IPV42A1N_UCAST_ADDR                 "192.168.2.1"
+#define _IPV42A2N_UCAST_ADDR                 "192.168.2.2"
+#define _IPV42A3N_UCAST_ADDR                 "192.168.2.3"
+#define _IPV42A4N_UCAST_ADDR                 "192.168.2.4"
+
+#define _IPV43A1N_UCAST_ADDR                 "192.168.3.1"
+#define _IPV43A2N_UCAST_ADDR                 "192.168.3.2"
+#define _IPV43A3N_UCAST_ADDR                 "192.168.3.3"
+#define _IPV43A4N_UCAST_ADDR                 "192.168.3.4"
+
+#define _IPV44A1N_UCAST_ADDR                 "192.168.4.1"
+#define _IPV44A2N_UCAST_ADDR                 "192.168.4.2"
+#define _IPV44A3N_UCAST_ADDR                 "192.168.4.3"
+#define _IPV44A4N_UCAST_ADDR                 "192.168.4.4"
+
+#define _IPV45A1N_UCAST_ADDR                 "192.168.5.1"
+#define _IPV45A2N_UCAST_ADDR                 "192.168.5.2"
+#define _IPV45A3N_UCAST_ADDR                 "192.168.5.3"
+#define _IPV45A4N_UCAST_ADDR                 "192.168.5.4"
+
+#define _IPV46A1N_UCAST_ADDR                 "192.168.6.1"
+#define _IPV46A2N_UCAST_ADDR                 "192.168.6.2"
+#define _IPV46A3N_UCAST_ADDR                 "192.168.6.3"
+#define _IPV46A4N_UCAST_ADDR                 "192.168.6.4"
+
+#define _IPV47A1N_UCAST_ADDR                 "192.168.7.1"
+#define _IPV47A2N_UCAST_ADDR                 "192.168.7.2"
+#define _IPV47A3N_UCAST_ADDR                 "192.168.7.3"
+#define _IPV47A4N_UCAST_ADDR                 "192.168.7.4"
+
+#define _IPV48A1N_UCAST_ADDR                 "192.168.8.1"
+#define _IPV48A2N_UCAST_ADDR                 "192.168.8.2"
+#define _IPV48A3N_UCAST_ADDR                 "192.168.8.3"
+#define _IPV48A4N_UCAST_ADDR                 "192.168.8.4"
+
+#define _IPV49A1N_UCAST_ADDR                 "192.168.9.1"
+#define _IPV49A2N_UCAST_ADDR                 "192.168.9.2"
+#define _IPV49A3N_UCAST_ADDR                 "192.168.9.3"
+#define _IPV49A4N_UCAST_ADDR                 "192.168.9.4"
+
+//------------------------------
+// Usual address definition
+//------------------------------
+#define _ALLNODES_MCAST_ADDR           _LLOCAL_ALLNODES_MCAST_ADDR
+#define _ALLROUTERS_MCAST_ADDR         _LLOCAL_ALLROUTERS_MCAST_ADDR
+#define _ALLRIPROUTERS_MCAST_ADDR	_LLOCAL_ALLRIPROUTERS_MCAST_ADDR
+#define _ALLDHCPAGENTS_MCAST_ADDR	_LLOCAL_ALLDHCPAGENTS_MCAST_ADDR
+#define _ALLDHCPSERVERS_MCAST_ADDR	_SLOCAL_ALLDHCPSERVERS_MCAST_ADDR
+
+#define _SOLNODE_MCAST_PRFX            _LLOCAL_SOLNODE_MCAST_PRFX
+#define _SOLNODE_MCAST_PRFXLEN         _LLOCAL_SOLNODE_MCAST_PRFXLEN
+
+
+//------------------------------
+// Usual Macros
+//------------------------------
+#define	_IPV6_SOLNODE_MCAST(_pv6)      v6merge(_SOLNODE_MCAST_PRFX, \
+					       _SOLNODE_MCAST_PRFXLEN, _pv6)
+#define	_ETHER_SOLNODE_MCAST(_pv6)     v62ethermulti(_IPV6_SOLNODE_MCAST(_pv6))
+
+
+//------------------------------
+// Virtual Test Nodes definiton
+//------------------------------
+#define A0N_MAC_ADDR                "00:00:00:00:a0:a0"
+#define A1N_MAC_ADDR                "00:00:00:00:a1:a1"
+#define A2N_MAC_ADDR                "00:00:00:00:a2:a2"
+#define A3N_MAC_ADDR                "00:00:00:00:a3:a3"
+#define A4N_MAC_ADDR                "00:00:00:00:a4:a4"
+#define A5N_MAC_ADDR                "00:00:00:00:a5:a5"
+#define A6N_MAC_ADDR                "00:00:00:00:a6:a6"
+#define A7N_MAC_ADDR                "00:00:00:00:a7:a7"
+#define A8N_MAC_ADDR                "00:00:00:00:a8:a8"
+#define A9N_MAC_ADDR                "00:00:00:00:a9:a9"
+
+//------------------------------
+// MIP6
+//------------------------------
+
+#define MIP6HA	"::fdff:ffff:ffff:fffe"
+
+#endif /*_STD_ADDR_DEF_*/

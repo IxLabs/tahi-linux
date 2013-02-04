@@ -1,0 +1,141 @@
+//
+// Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+// Yokogawa Electric Corporation, YDC Corporation,
+// IPA (Information-technology Promotion Agency, Japan).
+// All rights reserved.
+// 
+// Redistribution and use of this software in source and binary forms, with 
+// or without modification, are permitted provided that the following 
+// conditions and disclaimer are agreed and accepted by the user:
+// 
+// 1. Redistributions of source code must retain the above copyright 
+// notice, this list of conditions and the following disclaimer.
+// 
+// 2. Redistributions in binary form must reproduce the above copyright 
+// notice, this list of conditions and the following disclaimer in the 
+// documentation and/or other materials provided with the distribution.
+// 
+// 3. Neither the names of the copyrighters, the name of the project which 
+// is related to this software (hereinafter referred to as "project") nor 
+// the names of the contributors may be used to endorse or promote products 
+// derived from this software without specific prior written permission.
+// 
+// 4. No merchantable use may be permitted without prior written 
+// notification to the copyrighters. However, using this software for the 
+// purpose of testing or evaluating any products including merchantable 
+// products may be permitted without any notification to the copyrighters.
+// 
+// 
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+// CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+// BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+// FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+// COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+// CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+// THE POSSIBILITY OF SUCH DAMAGE.
+//
+
+// Echo Request  (TN -> NUT)
+
+//--------------------------------------------------------------------
+// ping to link local all node multicast address.
+
+
+//======================================================================
+// Frame
+
+FEM_icmp6_echo_request( ping1org, _HETHER_tn2nut,
+             {  _SRC(tnv6());
+                _DST(nutv6()); },
+             {  payload=apl; }
+)
+// Data
+Payload apl {
+	data=repeat(0x01,500);
+}
+
+//----------------------------------------------------------------------
+FEM_hdr_ipv6_exth( ping1st, _HETHER_tn2nut,
+             {  _SRC(tnv6());
+                _DST(nutv6()); },
+             {	header=_HDR_IPV6_NAME(ping1st);
+	        exthdr=fragment_ping1st;
+	        upper=payload_ping1st; }
+)
+// Fragment Header
+Hdr_Fragment fragment_ping1st {
+	NextHeader=58;
+//	Reserved1=ZERO;
+//	FragmentOffset=0;
+//	Reserved2=0;
+	MFlag=1;
+	Identification=2147483648;
+}
+// Payload Data
+Payload payload_ping1st {
+	data=substr(_PACKET_IPV6_NAME(ping1org),40,16);
+}
+
+
+//----------------------------------------------------------------------
+FEM_hdr_ipv6_exth( ping2nd, _HETHER_tn2nut,
+             {  _SRC(tnv6());
+                _DST(nutv6()); },
+             {	header=_HDR_IPV6_NAME(ping2nd);
+	        exthdr=fragment_ping2nd;
+	        upper=payload_ping2nd; }
+)
+// Fragment Header
+Hdr_Fragment fragment_ping2nd {
+	NextHeader=58;
+//	Reserved1=ZERO;
+	FragmentOffset=2;
+//	Reserved2=0;
+//	MFlag=0;
+	Identification=2147483648;
+}
+// Payload Data
+Payload payload_ping2nd {
+	data=substr(_PACKET_IPV6_NAME(ping1org),56,492);
+}
+
+
+
+//----------------------------------------------------------------------
+FEM_icmp6_ns(   ns, _HETHER_nut2tnsolnode,
+            {  _SRC(nutv6());
+               _DST(_IPV6_SOLNODE_MCAST(tnv6()));
+	       HopLimit=255; },
+            {  TargetAddress=tnv6();
+	       option=_SLLOPT_nut; }
+)
+//----------------------------------------------------------------------
+FEM_icmp6_na(   na, _HETHER_tn2nut,
+	    {  _SRC(tnv6());
+	       _DST(nutv6());
+	       HopLimit=255; },
+            {  RFlag=1;
+	       SFlag=1;
+	       OFlag=1;
+	       TargetAddress=tnv6();
+	       option=_TLLOPT_tn; }
+)
+//----------------------------------------------------------------------
+FEM_icmp6_echo_reply( echo_reply, _HETHER_nut2tn,
+            {  _SRC(nutv6());
+	       _DST(tnv6()); },
+            {  payload=apl; }
+)
+
+
+//======================================================================
+
+
+
+

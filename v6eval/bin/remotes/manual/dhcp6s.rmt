@@ -1,0 +1,271 @@
+#!/usr/bin/perl
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+# Yokogawa Electric Corporation, YDC Corporation,
+# IPA (Information-technology Promotion Agency, Japan).
+# All rights reserved.
+# 
+# Redistribution and use of this software in source and binary forms, with 
+# or without modification, are permitted provided that the following 
+# conditions and disclaimer are agreed and accepted by the user:
+# 
+# 1. Redistributions of source code must retain the above copyright 
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright 
+# notice, this list of conditions and the following disclaimer in the 
+# documentation and/or other materials provided with the distribution.
+# 
+# 3. Neither the names of the copyrighters, the name of the project which 
+# is related to this software (hereinafter referred to as "project") nor 
+# the names of the contributors may be used to endorse or promote products 
+# derived from this software without specific prior written permission.
+# 
+# 4. No merchantable use may be permitted without prior written 
+# notification to the copyrighters. However, using this software for the 
+# purpose of testing or evaluating any products including merchantable 
+# products may be permitted without any notification to the copyrighters.
+# 
+# 
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+# BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+# COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# THE POSSIBILITY OF SUCH DAMAGE.
+#
+# $TAHI: v6eval/bin/remotes/manual/dhcp6s.rmt,v 1.7 2010/03/24 02:42:35 mario Exp $
+#
+################################################################
+
+use V6evalRemote;
+use File::Basename;
+
+
+
+my $basename	= basename($0, '.rmt');
+my $prompt	= "$basename> ";
+
+rArg()  || goto error;
+
+
+print "\n";
+if(defined($rOpt_start)){
+	if (!defined($rOpt_link0) ){
+	print "lio_start". "\n"; 
+	print $prompt."NG:The interface used by DHCPv6 Server test has not been defined in the configuration file.";
+	print $prompt."Please define it!";
+	print "lio_stop". "\n"; 
+	goto error;
+	}
+
+	print "lio_start". "\n"; 
+	print $prompt . "Set parameters of DHCPv6 Server manually as following:\n\n";
+
+	if(defined($rOpt_link0) ){
+	print  $prompt."The interfaces used for DHCPv6 Server test is $rOpt_link0.\n";
+	}
+
+	if(defined($rOpt_valduid)){
+		print $prompt."Please set the client's DUID to specify it at the DHCPv6 server.\n";
+		print $prompt."\tValue  $rOpt_valduid\n";
+		print $prompt."\t\n";
+	}
+	
+	if(defined($rOpt_startaddr) && (defined($rOpt_endaddr))){
+	print  $prompt."Please set following parameters of IA and IA_address options in DHCPv6 server\n";
+	print  $prompt."\tprefer-life-time 10000;\n";
+	print  $prompt."\tvalid-life-time 20000\n";
+	print  $prompt."\trenew-time(T1) 5000\n";
+	print  $prompt."\trebind-time(T2) 16000\n";
+	print  $prompt "\n";
+	print  $prompt."\tPlease set the start address of which can be assigned:$rOpt_startaddr.\n";
+	print  $prompt."\tPlease set the end address of which can be assigned:$rOpt_endaddr.\n";
+	}
+
+	if(defined($rOpt_duid)){
+	print  $prompt."Please set the DUID type using by Server to $rOpt_duid.\n";
+	}
+
+
+	if(defined($rOpt_reconf)){
+	print  $prompt."Please enable the Reconfigure.\n";
+	}
+
+	if(defined($rOpt_preference)){
+		if("default" eq $rOpt_preference){
+			print  $prompt."Please set the Server Preference value to default value.\n";
+		}
+		else{
+			print  $prompt."Please set the Server Preference value to $rOpt_preference.\n";
+		}
+	}
+
+	if(defined($rOpt_rapidcommit)){
+		print  $prompt."Please enable the Server to support rapidcommit.\n";
+	}
+
+	if(defined($rOpt_allowoptions)){
+		print  $prompt."Please set the server to allow the option: $rOpt_allowoptions.\n";
+	}
+
+	if(defined($rOpt_onlypermit)){
+		print  $prompt."Please set the server which only allows the option: $rOpt_onlypermit.\n";
+	}
+
+	if(defined($rOpt_sendoptions)){
+	print  $prompt."Please set server to send the option: $rOpt_sendoptions.\n";
+	}
+
+	if(defined($rOpt_authentication)){
+		print  $prompt."Please set the Authentication protocol:";
+		if($rOpt_authentication eq "delayed"){
+			print  $prompt."Delayed Authentication Protocol.\n";
+		}
+		elsif($rOpt_authentication eq "reconfigure"){
+			print  $prompt."Reconfigure Key Authentication Protocol.\n";
+		}
+		else{
+			print  $prompt."$rOpt_authentication.\n";
+		}
+		print $prompt."Please set the Authentication parameter.\n";
+		print $prompt."\tREALM:  $rOpt_auth_realm\n";
+		print $prompt."\tKey ID: $rOpt_auth_keid\n";
+		print $prompt."\tShared Secret Key: $rOpt_auth_sharedsecretkey\n";
+	}
+
+	if("notset" eq $rOpt_delegateprefix){
+	print  $prompt."Please set server to disable the delegate prefix.\n";
+	}
+	elsif(defined($rOpt_delegateprefix) && defined($rOpt_length)){
+	print  $prompt."Please set server with the delegate prefix: $rOpt_delegateprefix.\n";
+	print  $prompt."And the length of prefix: $rOpt_length.\n";
+		if (defined($rOpt_T1iapd)){
+			print  $prompt."Please set the T1 of IA_PD option to $rOpt_T1iapd.\n";
+		}
+		else{
+			print  $prompt."Please set the T1 of IA_PD to 500.\n";
+		}
+		if (defined($rOpt_T2iapd)){
+			print  $prompt."Please set the T2 of IA_PD option to $rOpt_T2iapd.\n";
+		}
+		else{
+			print  $prompt."Please set the T2 of IA_PD to 800.\n";
+		}
+		
+		if (defined($rOpt_pltimeiapd)){
+			print  $prompt."Please set the preferred time of IA_PD prefix option to $rOpt_pltimeiapd.\n";
+			if(defined($rOpt_vltimeiapd)){
+			print  $prompt."Please set the valid time of IA_PD prefix option to $rOpt_vltimeiapd.\n";
+			}
+		}
+		#   In a message sent by a delegating router the preferred and valid
+		#   lifetimes should be set to the values of AdvPreferredLifetime and
+		#   AdvValidLifetime as specified in section 6.2.1, "Router Configuration
+		#   Variables" of RFC 2461 [4], unless administratively configured.
+		else{
+			print  $prompt."Please set the preferred time of IA_PD prefix option to the default value AdvPreferredLifetime(604800 s).\n";
+			print  $prompt."Please set the valid time of IA_PD prefix option to the default value AdvValidLifetime(2592000 s).\n";
+		}
+	}
+
+
+	if(defined($rOpt_delegateprefix2) && defined($rOpt_length2)){
+		print  $prompt."\n";
+		print  $prompt."Please set server with the next delegate prefix: $rOpt_delegateprefix2.\n";
+		print  $prompt."And the length of prefix: $rOpt_length2.\n"; 
+		print  $prompt."Please set the T1 of IA_PD to 500.\n";
+		print  $prompt."Please set the T2 of IA_PD to 800.\n";
+		print  $prompt."Please set the preferred time of IA_PD prefix option to the default value AdvPreferredLifetime(604800 s).\n";
+		print  $prompt."Please set the valid time of IA_PD prefix option to the default value AdvValidLifetime(2592000 s).\n";
+ 	}
+
+
+
+
+	if(defined($rOpt_stateless)){
+	print  $prompt."Please start the DHCPv6 Server test running as stateless DHCPv6 server.\n";
+	}
+
+	if(defined($rOpt_dns)){
+	print  $prompt."Please set the DNS recursive name server list option: $rOpt_dns\n";
+	}
+
+	if(defined($rOpt_domainlist)){
+	print  $prompt."Please set the Domain search list option: $rOpt_domainlist\n";
+	}
+
+	if(defined($rOpt_sipd)){
+	print  $prompt."Please set the SIP Servers Domain List option: $rOpt_sipd\n";
+	}
+
+	if(defined($rOpt_sipa)){
+	print  $prompt."Please set the SIP Servers IPv6 Address List option: $rOpt_sipa\n";
+	}
+
+################Begin start#################################
+	print $prompt."\n\n";
+
+	print $prompt."Please start the DHCPv6 Server!\n";
+	print  $prompt."Then press the Enter.\a\n";
+	print "lio_stop". "\n"; 
+
+}
+elsif(defined($rOpt_stop)){
+	print "lio_start". "\n"; 
+	print $prompt."Please stop the DHCPv6 Server!\n";
+	print  $prompt."Then press the Enter.\a\n";
+	print "lio_stop". "\n"; 
+}
+elsif(defined($rOpt_restart)){
+	print "lio_start". "\n"; 
+	print $prompt."Please restart the DHCPv6 Server!\n";
+	print  $prompt."Then press the Enter.\a\n";
+	print "lio_stop". "\n"; 
+}
+
+<STDIN>;
+exit($V6evalRemote::exitPass);
+
+
+error:
+    rClose();
+    exit($V6evalRemote::exitFail);
+
+################################################################
+__END__
+
+=head1 NAME
+
+B<XXX.rmt> - XXX
+
+=head1 SYNOPSIS
+
+B<XXX.rmt> [-commonoption ...] [XXX=XXX] [XXX="XXX"]
+
+=head1 DESCRIPTION
+
+B<XXX.rmt> XXX
+Default timeout value is five seconds.
+Do ``perldoc V6evalRemote'' for common options.
+
+B<ifs> option works only if B<target type> is "nec-libra".
+
+=head1 RETURN VALUES
+
+The B<cleardefr.rmt> exits with one of the following values:
+ 0  command completed successfully
+ 1  command failed
+
+=head1 SEE ALSO
+
+perldoc V6evalRemote
+
+=cut

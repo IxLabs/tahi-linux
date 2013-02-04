@@ -1,0 +1,358 @@
+//
+// Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+// Yokogawa Electric Corporation, YDC Corporation,
+// IPA (Information-technology Promotion Agency, Japan).
+// All rights reserved.
+// 
+// Redistribution and use of this software in source and binary forms, with 
+// or without modification, are permitted provided that the following 
+// conditions and disclaimer are agreed and accepted by the user:
+// 
+// 1. Redistributions of source code must retain the above copyright 
+// notice, this list of conditions and the following disclaimer.
+// 
+// 2. Redistributions in binary form must reproduce the above copyright 
+// notice, this list of conditions and the following disclaimer in the 
+// documentation and/or other materials provided with the distribution.
+// 
+// 3. Neither the names of the copyrighters, the name of the project which 
+// is related to this software (hereinafter referred to as "project") nor 
+// the names of the contributors may be used to endorse or promote products 
+// derived from this software without specific prior written permission.
+// 
+// 4. No merchantable use may be permitted without prior written 
+// notification to the copyrighters. However, using this software for the 
+// purpose of testing or evaluating any products including merchantable 
+// products may be permitted without any notification to the copyrighters.
+// 
+// 
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+// CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+// BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+// FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+// COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+// CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+// THE POSSIBILITY OF SUCH DAMAGE.
+//
+
+//======================================================================
+// Address and Prefix Macro
+#define GloSitePrefix    "fec0::"            // prefixlen 64 (sitelocal)
+//#define GloSitePrefix  "100:100:100::"     // prefixlen 64 (global)
+#define SolMulPrefix     "ff02::1:ff00:0000" // prefixlen 104
+#define AllNodeMulti     "ff02::1"
+
+//======================================================================
+// Frame
+Frame_Ether _ping {
+	header=eth_auto;
+	packet=ip_ping;
+}
+//----------------------------------------------------------------------
+Frame_Ether _ns {
+	header=eth_nut2tnsol;
+	packet=ip_ns;
+}
+//----------------------------------------------------------------------
+Frame_Ether _na {
+	header=eth_auto;
+	packet=ip_na;
+}
+//----------------------------------------------------------------------
+Frame_Ether _reply {
+	header=eth_auto;
+	packet=ip_reply;
+}
+//----------------------------------------------------------------------
+Frame_Ether _reply1st {
+	header=eth_auto;
+	packet=ip_reply1st;
+}
+//----------------------------------------------------------------------
+Frame_Ether _reply2nd {
+	header=eth_auto;
+	packet=ip_reply2nd;
+}
+//----------------------------------------------------------------------
+Frame_Ether _usolra {
+	header=eth_tn2allnode;
+	packet=ip_usolra;
+}
+
+//======================================================================
+// Ether
+Hdr_Ether eth_auto {
+//				Send		Recv
+//	SourceAddress=		tnether();   // nutether();
+//	DestinationAddress=	nutether();  // tnether();
+//	Type=0x86dd; // ip6
+}
+//----------------------------------------------------------------------
+Hdr_Ether eth_nut2tnsol {
+//	SourceAddress=nutether();
+	DestinationAddress=v62ethermulti(v6merge(SolMulPrefix,104,tnv6()));
+	Type=0x86dd; // ip6
+}
+//----------------------------------------------------------------------
+Hdr_Ether eth_tn2allnode {
+//	SourceAddress=tnether();
+	DestinationAddress=v62ethermulti(v6(AllNodeMulti)); //ether("33:33:0:0:0:1")
+	Type=0x86dd; // ip6
+}
+
+//======================================================================
+// Packet
+Packet_IPv6 ip_usolra {
+	header=v6tn2allnode;
+	upper=icmp_ra;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_ping {
+//	header=v6tn2nut;
+	header=v6tn2nut_glbl;
+	upper=icmp_ping;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_ns {
+	header=v6nut2tnsol;
+	upper=icmp_ns;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_na {
+	header=v6tn2nutadv;
+	upper=icmp_na;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_reply {
+	header=v6nut2tn_glbl;
+	upper=icmp_reply;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_reply1st {
+	header=v6nut2tn_glbl;
+	exthdr=frag_1st;
+	upper=icmp_reply_1st;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_reply2nd {
+	header=v6nut2tn_glbl;
+	exthdr=frag_2nd;
+	upper=icmp_reply_2nd;
+}
+
+//======================================================================
+// IPv6
+
+Hdr_IPv6 v6tn2allnode {
+	SourceAddress=tnv6();
+	DestinationAddress=v6(AllNodeMulti);
+//	FlowLabel=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+//	HopLimit=64;
+	HopLimit=255;
+//	PayloadLength=16;
+}
+//----------------------------------------------------------------------
+Hdr_IPv6 v6tn2nut {
+//	Version=6;
+	SourceAddress=tnv6();
+	DestinationAddress=nutv6();
+//	FlowLabel=0;
+//	TrafficClass=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+//	HopLimit=64;
+//	PayloadLength=16;
+}
+//----------------------------------------------------------------------
+Hdr_IPv6 v6nut2tn {
+	SourceAddress=nutv6();
+	DestinationAddress=tnv6();
+//	FlowLabel=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+//	HopLimit=64;
+//	PayloadLength=16;
+}
+//----------------------------------------------------------------------
+
+Hdr_IPv6 v6tn2nut_glbl {
+//	Version=6;
+	SourceAddress=tn2v6(GloSitePrefix,64);
+	DestinationAddress=nut2v6(GloSitePrefix,64);
+//	FlowLabel=0;
+//	TrafficClass=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+//	HopLimit=64;
+//	PayloadLength=16;
+}
+//----------------------------------------------------------------------
+Hdr_IPv6 v6nut2tn_glbl {
+	SourceAddress=nut2v6(GloSitePrefix,64);
+	DestinationAddress=tn2v6(GloSitePrefix,64);
+//	FlowLabel=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+//	HopLimit=64;
+//	PayloadLength=16;
+}
+//----------------------------------------------------------------------
+
+Hdr_IPv6 v6nut2tnsol {
+	SourceAddress=oneof(nut2v6(GloSitePrefix,64),nutv6());
+	DestinationAddress=tn2v6(SolMulPrefix,104);
+//	FlowLabel=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+	HopLimit=255;
+//	PayloadLength=16;
+}
+//----------------------------------------------------------------------
+
+Hdr_IPv6 v6tn2nutadv {
+	SourceAddress=tnv6();
+	DestinationAddress=nutv6();
+//	FlowLabel=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+	HopLimit=255;
+//	PayloadLength=16;
+}
+
+//======================================================================
+Hdr_Fragment frag_1st {
+	NextHeader=58;
+//	Reserved1=ZERO;
+//	FragmentOffset=0;
+//	Reserved2=0;
+	MFlag=1;
+	Identification=any;
+}
+//----------------------------------------------------------------------
+Hdr_Fragment frag_2nd {
+	NextHeader=58;
+//	Reserved1=ZERO;
+	FragmentOffset=156;
+//	Reserved2=0;
+	MFlag=0;
+	Identification=any;
+}
+//======================================================================
+// ICMPv6
+ICMPv6_EchoRequest icmp_ping {
+//	Type=128;
+//	Code=0;
+//	Checksum=?
+//	Identifier=0x9008;
+//	SequenceNumber=0;
+	payload=apl;
+}
+//----------------------------------------------------------------------
+ICMPv6_EchoReply icmp_reply {
+//	Type=129;
+//	Code=0;
+//	Checksum=?
+//	Identifier=0x9008;
+//	SequenceNumber=0;
+	payload=apl;
+}
+//----------------------------------------------------------------------
+// NS
+ICMPv6_NS icmp_ns {
+//	Type=135;
+//	Code=0;
+//	Checksum=?
+//	Reserved=zero;
+//	TargetAddress=tnv6();
+	TargetAddress=tn2v6(GloSitePrefix,64);
+	option=sslopt_nut;
+}
+//----------------------------------------------------------------------
+// NA ("TN -> NUT")
+ICMPv6_NA icmp_na {
+//	Type=136;
+//	Code=0;
+//	Checksum=?
+//	Reserved=zero;
+	RFlag=1;
+	SFlag=1;
+	OFlag=1;
+	TargetAddress=tn2v6(GloSitePrefix,64);
+	option=ttlopt_tn;
+}
+
+//======================================================================
+ICMPv6_RA icmp_ra {
+//	Type=134;
+//	Code=0;
+//	Checksum=?
+	CurHopLimit=64;
+//	MFlag=0;
+//	OFlag=1;
+//	Reserved=ZERO;
+	LifeTime=1805;
+	ReachableTime=30005;
+	RetransTimer=1005;
+	option=sslopt_tn;
+	option=prefixopt_a;
+	option=mtuopt_1300;
+}
+//======================================================================
+Opt_ICMPv6_TLL ttlopt_tn {
+//	Type=2;
+//	Length=1;
+	LinkLayerAddress=tnether();	
+}
+//----------------------------------------------------------------------
+Opt_ICMPv6_SLL sslopt_nut {
+//	Type=1;
+//	Length=1;
+	LinkLayerAddress=nutether();
+}
+//----------------------------------------------------------------------
+Opt_ICMPv6_SLL sslopt_tn {
+//	Type=1;
+//	Length=1;
+	LinkLayerAddress=tnether();
+}
+//----------------------------------------------------------------------
+Opt_ICMPv6_Prefix prefixopt_a {
+//	Type=3;
+//	Length=4;
+//	PrefixLength=64;
+	LFlag=1;
+	AFlag=1;	
+//	Reserved1=ZERO;	
+	ValidLifetime=3600005;
+	PreferredLifetime=3600005;
+//	Reserved2=ZERO;	
+	Prefix=v6(GloSitePrefix);
+}
+//----------------------------------------------------------------------
+Opt_ICMPv6_MTU mtuopt_1300 {
+//
+	MTU=1300;
+}
+
+//======================================================================
+// Data
+Payload apl {
+	data=repeat(0x5f,1300);
+}
+//----------------------------------------------------------------------
+// Data
+Payload icmp_reply_1st {
+	data=substr(ip_reply,40,1248);
+}
+// Data
+Payload icmp_reply_2nd {
+	data=substr(ip_reply,1288,60);
+}

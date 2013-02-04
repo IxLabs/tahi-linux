@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+
+use V6evalRemote;
+
+# Example:
+# ls.rmt [-options ...] [timeout=5]
+
+print "Open remote\n";
+rOpen() || die;
+$type=rType();
+rLogStdout(1);
+
+$rOpt_timeout=5 if $rOpt_timeout == undef;
+
+if($type eq "kame-freebsd") {
+	print "Login\n";
+	rLogin($rOpt_timeout) || die;
+	print "List dir\n";
+	rCommand("ls -a", $rOpt_timeout) || die;
+	print "Logout\n";
+	rLogout($rOpt_timeout) || die;
+} else {
+	print "$type: Unknown target type\n";
+}
+
+print "Close remote\n";
+rClose() || die;

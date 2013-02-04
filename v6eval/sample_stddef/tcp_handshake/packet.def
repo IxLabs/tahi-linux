@@ -1,0 +1,303 @@
+//
+// Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+   // Yokogawa Electric Corporation, YDC Corporation,
+   // IPA (Information-technology Promotion Agency, Japan).
+   // All rights reserved.
+   // 
+   // Redistribution and use of this software in source and binary forms, with 
+   // or without modification, are permitted provided that the following 
+   // conditions and disclaimer are agreed and accepted by the user:
+   // 
+   // 1. Redistributions of source code must retain the above copyright 
+   // notice, this list of conditions and the following disclaimer.
+   // 
+   // 2. Redistributions in binary form must reproduce the above copyright 
+   // notice, this list of conditions and the following disclaimer in the 
+   // documentation and/or other materials provided with the distribution.
+   // 
+   // 3. Neither the names of the copyrighters, the name of the project which 
+   // is related to this software (hereinafter referred to as "project") nor 
+   // the names of the contributors may be used to endorse or promote products 
+   // derived from this software without specific prior written permission.
+   // 
+   // 4. No merchantable use may be permitted without prior written 
+   // notification to the copyrighters. However, using this software for the 
+   // purpose of testing or evaluating any products including merchantable 
+   // products may be permitted without any notification to the copyrighters.
+   // 
+   // 
+   // 
+   // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+   // CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+   // BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+   // FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+   // COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+   // INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+   // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+   // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+   // HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+   // CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+   // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+   // THE POSSIBILITY OF SUCH DAMAGE.
+   //
+// $TAHI: v6eval/sample_stddef/tcp_handshake/packet.def,v 1.4 2003/10/10 12:07:14 akisada Exp $
+//
+
+///////////////////////
+// set default value //
+///////////////////////
+
+#ifndef CPP_LOCAL_PRT
+#define CPP_LOCAL_PRT	0
+#endif	/* CPP_LOCAL_PRT */
+
+#ifndef CPP_RMT_PRT
+#define CPP_RMT_PRT	0
+#endif	/* CPP_LOCAL_PRT */
+
+
+//////////////////////////////////
+// values for vSend('send_tcp') //
+//////////////////////////////////
+
+#ifndef CPP_SEQ_NO
+#define CPP_SEQ_NO	0
+#endif	/* CPP_SEQ_NO */
+
+#ifndef CPP_ACK_NO
+#define CPP_ACK_NO	0
+#endif	/* CPP_ACK_NO */
+
+#ifndef CPP_URG_SEND
+#define CPP_URG_SEND	0
+#endif /* CPP_URG_SEND */
+
+#ifndef CPP_ACK_SEND
+#define CPP_ACK_SEND	0
+#endif /* CPP_ACK_SEND */
+
+#ifndef CPP_PSH_SEND
+#define CPP_PSH_SEND	0
+#endif /* CPP_PSH_SEND */
+
+#ifndef CPP_RST_SEND
+#define CPP_RST_SEND	0
+#endif /* CPP_RST_SEND */
+
+#ifndef CPP_SYN_SEND
+#define CPP_SYN_SEND	0
+#endif /* CPP_SYN_SEND */
+
+#ifndef CPP_FIN_SEND
+#define CPP_FIN_SEND	0
+#endif /* CPP_FIN_SEND */
+
+
+
+//////////////////////////////////
+// values for vRecv('recv_tcp') //
+//////////////////////////////////
+
+#ifndef CPP_URG_RECV
+#define CPP_URG_RECV	0
+#endif /* CPP_URG_RECV */
+
+#ifndef CPP_ACK_RECV
+#define CPP_ACK_RECV	0
+#endif /* CPP_ACK_RECV */
+
+#ifndef CPP_PSH_RECV
+#define CPP_PSH_RECV	0
+#endif /* CPP_PSH_RECV */
+
+#ifndef CPP_RST_RECV
+#define CPP_RST_RECV	0
+#endif /* CPP_RST_RECV */
+
+#ifndef CPP_SYN_RECV
+#define CPP_SYN_RECV	0
+#endif /* CPP_SYN_RECV */
+
+#ifndef CPP_FIN_RECV
+#define CPP_FIN_RECV	0
+#endif /* CPP_FIN_RECV */
+
+
+
+////////////////////////////////////////////////////////////////
+//                                                            //
+// ND: TN vs NUT                                              //
+//                                                            //
+////////////////////////////////////////////////////////////////
+
+FEM_icmp6_ns(
+	recv_ns_multi,
+	_HETHER_nut2tnsolnode,
+	{
+		HopLimit	= 255;
+		_SRC(nutv6());
+		_DST(_IPV6_SOLNODE_MCAST(tnv6()));
+	},
+	{
+		TargetAddress	= tnv6();
+		option		= _SLLOPT_nut;
+	}
+)
+
+FEM_icmp6_ns(
+	recv_ns_uni,
+	_HETHER_nut2tn,
+	{
+		HopLimit	= 255;
+		_SRC(nutv6());
+		_DST(tnv6());
+	},
+	{
+		TargetAddress	= tnv6();
+	}
+)
+
+FEM_icmp6_ns(
+	recv_ns_uni_sll,
+	_HETHER_nut2tn,
+	{
+		HopLimit	= 255;
+		_SRC(nutv6());
+		_DST(tnv6());
+	},
+	{
+		TargetAddress	= tnv6();
+		option		= _SLLOPT_nut;
+	}
+)
+
+FEM_icmp6_na(
+	send_na,
+	_HETHER_tn2nut,
+	{
+		HopLimit	= 255;
+		_SRC(tnv6());
+		_DST(nutv6());
+	},
+	{
+		SFlag		= 1;
+		OFlag		= 1;
+		TargetAddress	= tnv6();
+		option		= _TLLOPT_tn;
+	}
+)
+
+
+
+////////////////////////////////////////////////////////////////
+//                                                            //
+// Echo Request/Reply: TN vs NUT                              //
+//                                                            //
+////////////////////////////////////////////////////////////////
+
+Payload payload8 {
+	data	= hexstr("0123456789abcdef", 8);
+}
+
+FEM_icmp6_echo_request(
+	send_ereq,
+	_HETHER_tn2nut,
+	{
+		_SRC(tnv6());
+		_DST(nutv6());
+	},
+	{
+		payload	= payload8;
+	}
+)
+
+FEM_icmp6_echo_reply(
+	recv_erep,
+	_HETHER_nut2tn,
+	{
+		_SRC(nutv6());
+		_DST(tnv6());
+	},
+	{
+		payload	= payload8;
+	}
+)
+
+
+
+////////////////////////////////////////////////////////////////
+//                                                            //
+// TCP: TN vs NUT                                             //
+//                                                            //
+////////////////////////////////////////////////////////////////
+
+Payload payload_null {
+	data	= {};
+}
+
+
+
+////////////////////////////////
+// TCP: TN->NUT               //
+////////////////////////////////
+
+FEM_tcp6(
+	send_tcp,
+	_HETHER_tn2nut,
+	{
+		_SRC(tnv6());
+		_DST(nutv6());
+	},
+	{
+		_SPORT(CPP_LOCAL_PRT);
+		_DPORT(CPP_RMT_PRT);
+		SequenceNumber		= CPP_SEQ_NO;
+		AcknowledgmentNumber	= CPP_ACK_NO;
+		URGFlag			= CPP_URG_SEND;
+		ACKFlag			= CPP_ACK_SEND;
+		PSHFlag			= CPP_PSH_SEND;
+		RSTFlag			= CPP_RST_SEND;
+		SYNFlag			= CPP_SYN_SEND;
+		FINFlag			= CPP_FIN_SEND;
+	},
+	{
+		header	= _HDR_TCP_NAME(send_tcp);
+		payload	= payload_null;
+	}
+)
+
+
+
+////////////////////////////////
+// TCP: NUT->TN               //
+////////////////////////////////
+
+FEM_tcp6(
+	recv_tcp,
+	_HETHER_nut2tn,
+	{
+		_SRC(nutv6());
+		_DST(tnv6());
+	},
+	{
+		_SPORT(CPP_RMT_PRT);
+		_DPORT(CPP_LOCAL_PRT);
+		SequenceNumber		= any;
+		AcknowledgmentNumber	= any;
+		URGFlag			= CPP_URG_RECV;
+		ACKFlag			= CPP_ACK_RECV;
+		PSHFlag			= CPP_PSH_RECV;
+		RSTFlag			= CPP_RST_RECV;
+		SYNFlag			= CPP_SYN_RECV;
+		FINFlag			= CPP_FIN_RECV;
+		Window			= any;
+
+		// not to verify following payload
+		// this means I don't care any options
+		UrgentPointer		= stop;
+	},
+	{
+		header	= _HDR_TCP_NAME(recv_tcp);
+		payload	= payload_null;
+	}
+)

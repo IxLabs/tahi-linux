@@ -1,0 +1,96 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>ping4 - IPv4 ICMP Echo Request/Reply</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@jail-3.freebsd.org" />
+</head>
+
+<body style="background-color: white">
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+<!--
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#target">TARGET</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#initialization">INITIALIZATION</a></li>
+	<li><a href="#test_procedure">TEST PROCEDURE</a></li>
+	<li><a href="#judgement">JUDGEMENT</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+</ul>
+-->
+<!-- INDEX END -->
+
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<pre>
+  ping4 - IPv4 ICMP Echo Request/Reply</pre>
+<p>
+</p>
+<hr />
+<h1><a name="target">TARGET</a></h1>
+<pre>
+  IPv4 node (Host and Router)</pre>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>
+</p>
+<hr />
+<h1><a name="initialization">INITIALIZATION</a></h1>
+<pre>
+  Please config the target :
+     IP Address : 192.168.0.2
+     Netmask    : 255.255.255.0</pre>
+<p>
+</p>
+<hr />
+<h1><a name="test_procedure">TEST PROCEDURE</a></h1>
+<pre>
+  Tester                      Target
+    |                           |
+    |--------------------------&gt;|
+    |   Echo Request            |
+    |                           |
+    |                           |
+    |&lt;--------------------------|
+    |   (ARP request)           |
+    |                           |
+    |                           |
+    |--------------------------&gt;|
+    |   (ARP reply)             |
+    |                           |
+    |                           | 
+    |&lt;--------------------------|
+    |   Echo Reply              |
+    |                           |
+    |                           |
+    v                           v</pre>
+<pre>
+  1. Send Echo Request
+  2. Wait Echo Reply or ARP request
+  3. If ARP request received then send ARP reply, and wait Echo Reply again
+  4. Receive Echo Reply</pre>
+<p>
+</p>
+<hr />
+<h1><a name="judgement">JUDGEMENT</a></h1>
+<pre>
+  PASS: Echo Reply Received</pre>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<pre>
+  perldoc V6evalTool</pre>
+
+</body>
+
+</html>

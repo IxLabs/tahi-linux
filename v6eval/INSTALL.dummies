@@ -1,0 +1,142 @@
+Implementing TAHI for dummies
+-----------------------------
+12/11/02
+jzwiebel
+
+The current conformance test standard for IPv6 implementations can be found
+at www.tahi.org.  This is a Japanese organization supported by several 
+Japanese companies that in combination with other organizations is 
+dedicated to the standardization of IPv6.  The TAHI conformance tests
+are comprehensive and extensive.  However, if you cannot read Japanese,
+the documentation on how to use these tools is limited and confusing.  This
+document is an attempt to provide you with a road map that will help you
+through this confusion.
+
+The TAHI tool can be effectively used without connecting the serial port
+of the TN to the NUT.  Unless you have a lot of time on your hands, you
+may want to put this step off indefinitely.  However, approximately 50%
+of the tests will require this capability.  This is especially true with the
+neighbor discovery tests.
+
+Many will want to be able to run this test from a remote location.  One of 
+the best ways to gain an understanding of the tool while making the results 
+widely available is to:
+
+  1) install the tool following the INSTALL instructions, but ignore
+     any references to the serial line communication requirements.
+  2) install p5-Expect: /usr/ports/lang/p5-Expect
+  3) install apache: /usr/ports/www/apache13+ipv6, start it up.
+  4) cp -pR /usr/local/v6eval/ct  $SOMEWHERE
+     where SOMEWHERE is in /usr/local/www/data to allow remote access
+     to the reports via Netscape. 
+  5) cd to $SOMEWHERE/ct and "make clean" "make document".
+     This will build a complete web site that describes each of the
+     tests that TAHI will perform.
+  6) Access the web site and review several tests.  The first test
+     is PingtoHost.  Note especially the synopsis.  PingtoHost.seq
+     and PingtoHost.def will be found in the $SOMEWHERE/ct directory
+     you have just created.  You can run this test manually from 
+     this directory or from /usr/local/v6eval/ct/spec.
+  7) Do a "man V6evalTool".  This describes the options available to
+     you when running the *.seq files in ct/.  You may find the man
+     on "V6evalRemote" to be useful, but only if you want to connect
+     the TN to the NUT via the serial line.
+  8) Configure your TN and NUT with IPv6 addresses on LINK0.
+     You may want to try pinging the NUT from the TN.
+  9) in the $SOMEWHERE/ct directory "./PingToHost.seq -pkt PingToHost.def"
+
+You have now run your first TAHI conformance test case.  You may want to
+run "make clean" "make test" in this directory after you have modified the
+Makefile to run only those tests you are interested in.  
+
+NOTE: the serial communication between the TN and the NUT is -NOT- set up.
+NOTE: if you want to run tests agains a router, you need to configure
+      additional interfaces.  (see below)
+
+The remainder of this document describes pitfalls you may find when
+setting TAHI up for the first time.  
+
+INSTALL.[v6eval|ct]
+-------------------
+
+The INSTALL files explain how to build the TAHI source tree.  If you 
+follow the instructions and build the tool on a IPv6 enabled KAME FreeBSD
+system you will have little trouble building the tool.  The problems come
+when you try to configure and use the tool.  Most of these problems are
+related to setting up the tool to remotely control the NUT via a NULL
+modem cable.  If you are setting up the tool for the first time, ignore
+this information.  Further explaination is below
+
+SUBDIRUSE
+---------
+
+The first problem you may run into is the name change of the FreeBSD
+make macro SUBDIRUSE to SUBDIR.  This changed somewhere between FreeBSD 4.6
+and 4.7.  The 2.0.2 TAHI tools are built for FreeBSD 4.7 and use the SUBDIR
+macro.  If you want to avoid problems, the easiest thing to do is to make
+sure you have FreeBSD 4.7 on your system (as of this date).
+
+tn.def
+------
+
+This configuration file is described in both the INSTALL.v6eval and
+INSTALL.ct files.  Most of the configuration items are concerned with
+remote control of the NUT by the TN through the TN serial port connected
+to a console port on the NUT.  This capability is very powerful, but it
+is very difficult to set up and get right.  Even if you are trying to
+set up a FreeBSD system as the NUT, this will be difficult to get configured
+correctly.  In the end though, it is not required to make extensive use
+of the TAHI tools.
+
+The only lines you need to configure are those that match LINK0 and
+LINK1 (if you are testing a router) to the real name of the interface 
+on your TN.  Leave the others as default.
+
+nut.def
+------
+
+The only configuration items of importance here are also those that match
+LINK0 (and LINK1 if the NUT is a router) with the real MAC address of the
+NUT -AND- the "type" value [host|router].  All other configuration items 
+are used to set up the remote control of the NUT from the TN over the 
+serial line.
+
+The "System" entry is used to determine which set of remote-control 
+scripts will be used by autorun.  These scripts are found in the 
+/user/local/v6eval/bin directory.  You won't be using them if you follow
+the steps outlined in this document.
+
+nut type
+--------
+
+If the NUT type is a "router", you must set up the TN and NUT on LINK0 and
+LINK1.  The NUT must be configured with an address of "3ffe:501:ffff:100/64"
+on LINK0 and "3ffe:501:ffff:101/64" on LINK1.  The TN will automaticall use 
+these prefixes whenever any router tests are run.
+
+Serial communication
+--------------------
+
+The INSTALL files go into great detail about how to set up serial communication
+between the TN and the NUT.  Do not consider doing this until you've had
+the opportunity to run the tests a few times after manually configuring the
+test setup.  The serial communication can be set up using any port out
+and any port in.  INSTALL.ct shows how to set up /etc/ttys to use the
+cuaa* drivers.  Many folks use ttyd0 as a serial console.  You need to
+make sure that whatever port you use on the TN that "getty" is set to
+"off".  On the NUT, "getty" is set to "on".
+
+My experience has been that if I tried to run the TAHI "make test", out
+any port other than cuaa0, the perl script would always hang waiting for
+a "login" prompt.  Even when I did use cuaa0, the script would still
+hang about 50% of the time on the "login" prompt.  When the script did
+not hang, remote control of the NUT still always failed.  There was never
+any problem using "cu -l /dev/cuaa?" to manually connect to the NUT.  
+
+bpf filters
+-----------
+
+If you try to run these tests without configuring IPv6 on the TN you
+will receive the following somewhat cryptic error:
+  ipv6-bsd2# ./PingToHost.seq  -pkt PingToHost.def
+   can't open bpf or socket

@@ -1,0 +1,22 @@
+				README
+
+			      TAHI Project
+
+			$Date: 2000/08/03 02:50:49 $
+
+In this release (1.1), remote control files (*.rmt) are separated each
+target.  
+
+Target specific *.rmt files are stored in sub-directories.
+  Ex.: kame-freebsd, linux-v6, ms-win2k, sun-solaris etc..
+
+Each directory name is same as 'System' in nut.def file.
+
+When 'Sysytem' defined as 'manual', all remote control methods display
+prompt and wait manual operation.
+
+If sub-directory name 'System' is not found, remote control methods use
+v6eval/bin/unknown/*.rmt as unknown 'System',  these *.rmt files do nothing.
+
+
+							[end of README]

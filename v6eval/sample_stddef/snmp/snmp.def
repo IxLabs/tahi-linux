@@ -1,0 +1,246 @@
+/*
+ * Copyright (C) IBM Corporation 2004.
+ * All rights reserved.
+ *
+ * Redistribution and use of this software in source and binary forms, with
+ * or without modification, are permitted provided that the following
+ * conditions and disclaimer are agreed and accepted by the user:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the names of the copyrighters, the name of the project which
+ * is related to this software (hereinafter referred to as "project") nor
+ * the names of the contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ *
+ * 4. No merchantable use may be permitted without prior written
+ * notification to the copyrighters. However, using this software for the
+ * purpose of testing or evaluating any products including merchantable
+ * products may be permitted without any notification to the copyrighters.
+ *
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING
+ * BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE
+ * COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *    Author: Kazuo Hiekata <e30948@jp.ibm.com>
+ *
+ */
+
+FEM_udp6_snmp(
+	snmp_test_getrequest,
+	_HETHER_tn2nut,
+	{ _SRC(tnv6()); _DST(nutv6()); },
+	{ _SPORT(5000); _DPORT(161); },
+	{ snmpmsg = msg_getrequest; }
+)
+FEM_udp6_snmp(
+	snmp_test_getnextrequest,
+	_HETHER_tn2nut,
+	{ _SRC(tnv6()); _DST(nutv6()); },
+	{ _SPORT(5000); _DPORT(161); },
+	{ snmpmsg = msg_getnextrequest; }
+)
+FEM_udp6_snmp(
+	snmp_test_getresponse,
+	_HETHER_tn2nut,
+	{ _SRC(tnv6()); _DST(nutv6()); },
+	{ _SPORT(5000); _DPORT(161); },
+	{ snmpmsg = msg_getresponse; }
+)
+FEM_udp6_snmp(
+	snmp_test_trap,
+	_HETHER_tn2nut,
+	{ _SRC(tnv6()); _DST(nutv6()); },
+	{ _SPORT(5000); _DPORT(162); },
+	{ snmpmsg = msg_trap; }
+)
+FEM_udp6_snmp(
+	snmp_test_getbulk,
+	_HETHER_tn2nut,
+	{ _SRC(tnv6()); _DST(nutv6()); },
+	{ _SPORT(5000); _DPORT(161); },
+	{ snmpmsg = msg_getbulk; }
+)
+FEM_udp6_snmp(
+	snmp_test_inform,
+	_HETHER_tn2nut,
+	{ _SRC(tnv6()); _DST(nutv6()); },
+	{ _SPORT(5000); _DPORT(161); },
+	{ snmpmsg = msg_inform; }
+)
+FEM_udp6_snmp(
+	snmp_test_trap2,
+	_HETHER_tn2nut,
+	{ _SRC(tnv6()); _DST(nutv6()); },
+	{ _SPORT(5000); _DPORT(162); },
+	{ snmpmsg = msg_trap2; }
+)
+FEM_udp6_snmp(
+	snmp_test_report,
+	_HETHER_tn2nut,
+	{ _SRC(tnv6()); _DST(nutv6()); },
+	{ _SPORT(5000); _DPORT(161); },
+	{ snmpmsg = msg_report; }
+)
+//================================================================
+Pdu_SNMP_Message msg_getrequest {
+	version = pdu_version_1;
+	community = pdu_community0;
+	pdumsg = pdu_getrequest;
+}
+Pdu_SNMP_Message msg_getnextrequest {
+	version = pdu_version_1;
+	community = pdu_community0;
+	pdumsg = pdu_getnextrequest;
+}
+Pdu_SNMP_Message msg_getresponse {
+	version = pdu_version_1;
+	community = pdu_community0;
+	pdumsg = pdu_getresponse;
+}
+Pdu_SNMP_Message msg_trap {
+	version = pdu_version_1;
+	community = pdu_community0;
+	pdumsg = pdu_trap;
+}
+Pdu_SNMP_Message msg_getbulk {
+	version = pdu_version_2c;
+	community = pdu_community1;
+	pdumsg = pdu_getbulk;
+}
+Pdu_SNMP_Message msg_inform {
+	version = pdu_version_2c;
+	community = pdu_community1;
+	pdumsg = pdu_inform;
+}
+Pdu_SNMP_Message msg_trap2 {
+	version = pdu_version_2c;
+	community = pdu_community1;
+	pdumsg = pdu_trap2;
+}
+Pdu_SNMP_Message msg_report {
+	version = pdu_version_2c;
+	community = pdu_community1;
+	pdumsg = pdu_report;
+}
+//================================================================
+Pdu_SNMP_Version pdu_version_1 { Version = 0; }
+Pdu_SNMP_Version pdu_version_2c { Version = 1; }
+//================================================================
+Pdu_SNMP_Community pdu_community0 { Community = ascii("private", 7); }
+Pdu_SNMP_Community pdu_community1 { Community = ascii("public", 6); }
+//================================================================
+Pdu_SNMP_GetRequest pdu_getrequest {
+	pdu_requestid = pdu_requestid0;
+	pdu_errorstatus = pdu_errorstatus0;
+	pdu_errorindex = pdu_errorindex0;
+	pdu_varbindlist = pdu_varbindlist_getrequest;
+}
+Pdu_SNMP_GetNextRequest pdu_getnextrequest {
+	pdu_requestid = pdu_requestid0;
+	pdu_errorstatus = pdu_errorstatus0;
+	pdu_errorindex = pdu_errorindex0;
+	pdu_varbindlist = pdu_varbindlist_getnextrequest;
+}
+Pdu_SNMP_GetResponse pdu_getresponse {
+	pdu_requestid = pdu_requestid1;
+	pdu_errorstatus = pdu_errorstatus1;
+	pdu_errorindex = pdu_errorindex1;
+	pdu_varbindlist = pdu_varbindlist_getresponse;
+}
+Pdu_SNMP_Trap pdu_trap {
+	pdu_enterpriseoid = pdu_objectid0;
+	pdu_ipaddress = pdu_ipaddress0;
+	pdu_generictrap = pdu_integer0;
+	pdu_specifictrap = pdu_integer1;
+	pdu_timestamp = pdu_timeticks0;
+	pdu_varbindlist = pdu_varbindlist_trap;
+}
+Pdu_SNMP_GetBulk pdu_getbulk {
+	pdu_requestid = pdu_requestid2;
+	pdu_errorstatus = pdu_errorstatus2;
+	pdu_errorindex = pdu_errorindex2;
+	pdu_varbindlist = pdu_varbindlist_getbulk;
+}
+Pdu_SNMP_Inform pdu_inform {
+	pdu_requestid = pdu_requestid2;
+	pdu_errorstatus = pdu_errorstatus2;
+	pdu_errorindex = pdu_errorindex2;
+	pdu_varbindlist = pdu_varbindlist_inform;
+}
+Pdu_SNMP_Trap2 pdu_trap2 {
+	pdu_requestid = pdu_requestid0;
+	pdu_errorstatus = pdu_errorstatus0;
+	pdu_errorindex = pdu_errorindex0;
+	pdu_varbindlist = pdu_varbindlist_trap2;
+	pdu_varbindlist = pdu_varbindlist_trap2;
+}
+Pdu_SNMP_Report pdu_report {
+	pdu_requestid = pdu_requestid0;
+	pdu_errorstatus = pdu_errorstatus0;
+	pdu_errorindex = pdu_errorindex0;
+	pdu_varbindlist = pdu_varbindlist_report;
+}
+//================================================================
+Pdu_SNMP_RequestID pdu_requestid0 { RequestID = 12345678; }
+Pdu_SNMP_RequestID pdu_requestid1 { RequestID = 11111111; }
+Pdu_SNMP_RequestID pdu_requestid2 { RequestID = 22222222; }
+//================================================================
+Pdu_SNMP_ErrorStatus pdu_errorstatus0 { ErrorStatus = 0; }
+Pdu_SNMP_ErrorStatus pdu_errorstatus1 { ErrorStatus = 1; }
+Pdu_SNMP_ErrorStatus pdu_errorstatus2 { ErrorStatus = 2; }
+//================================================================
+Pdu_SNMP_ErrorIndex pdu_errorindex0 { ErrorIndex = 0; }
+Pdu_SNMP_ErrorIndex pdu_errorindex1 { ErrorIndex = 1; }
+Pdu_SNMP_ErrorIndex pdu_errorindex2 { ErrorIndex = 2; }
+//================================================================
+Pdu_SNMP_VarBindList pdu_varbindlist_getrequest { pdu = pdu_varbind_getrequest; }
+Pdu_SNMP_VarBindList pdu_varbindlist_getnextrequest { pdu = pdu_varbind_getnextrequest; }
+Pdu_SNMP_VarBindList pdu_varbindlist_getresponse { pdu = pdu_varbind_getresponse; }
+Pdu_SNMP_VarBindList pdu_varbindlist_trap { pdu = pdu_varbind_trap0; pdu = pdu_varbind_trap1; }
+Pdu_SNMP_VarBindList pdu_varbindlist_getbulk { pdu = pdu_varbind_getbulk; }
+Pdu_SNMP_VarBindList pdu_varbindlist_inform { pdu = pdu_varbind_inform; }
+Pdu_SNMP_VarBindList pdu_varbindlist_trap2 { pdu = pdu_varbind_trap2; }
+Pdu_SNMP_VarBindList pdu_varbindlist_report { pdu = pdu_varbind_report; }
+//================================================================
+Pdu_SNMP_VarBind pdu_varbind_getrequest { pdu = pdu_objectid0; pdu = pdu_null; }
+Pdu_SNMP_VarBind pdu_varbind_getnextrequest { pdu = pdu_objectid0; pdu = pdu_null; }
+Pdu_SNMP_VarBind pdu_varbind_getresponse { pdu = pdu_objectid0; pdu = pdu_octstring0; }
+Pdu_SNMP_VarBind pdu_varbind_trap0 { pdu = pdu_objectid0; pdu = pdu_timeticks0; }
+Pdu_SNMP_VarBind pdu_varbind_trap1 { pdu = pdu_objectid0; pdu = pdu_objectid1; }
+Pdu_SNMP_VarBind pdu_varbind_getbulk { pdu = pdu_objectid0; pdu = pdu_objectid1; }
+Pdu_SNMP_VarBind pdu_varbind_inform { pdu = pdu_objectid0; pdu = pdu_objectid1; }
+Pdu_SNMP_VarBind pdu_varbind_trap2 { pdu = pdu_objectid0; pdu = pdu_objectid1; }
+Pdu_SNMP_VarBind pdu_varbind_report { pdu = pdu_objectid0; pdu = pdu_objectid1; }
+//================================================================
+Pdu_SNMP_ObjectID pdu_objectid0 { ObjectID = objectid("1.3.6.1.2.1.55.1.5.1.2.3"); }
+Pdu_SNMP_ObjectID pdu_objectid1 { ObjectID = objectid("1.3.6.1.2.1.55.1.5.1.2.3.1000"); }
+Pdu_SNMP_ObjectID pdu_objectid2 { ObjectID = hexstr("2b06010201370105010203", 11); }
+//================================================================
+Pdu_SNMP_TimeTicks pdu_timeticks0 { TimeTicks = hexstr("0a", 1); }
+//================================================================
+Pdu_SNMP_OctString pdu_octstring0 { OctString = ascii("samplesamplesamplesample", 24); }
+//================================================================
+Pdu_SNMP_IPAddress pdu_ipaddress0 { IPAddress = v4("1.2.3.4"); }
+//================================================================
+Pdu_SNMP_GenericTrap pdu_integer0 { GenericTrap = 10; }
+Pdu_SNMP_SpecificTrap pdu_integer1 { SpecificTrap = 5678; }
+//================================================================
+Pdu_SNMP_Null pdu_null { }
+//================================================================

@@ -1,0 +1,998 @@
+
+
+
+                CHANGELOG for IPv6 Conformance Test Tool
+
+                      $Date: 2011/04/22 01:38:40 $
+
+
+
+2011/04/22	Release 3.3.2
+	Official release
+
+
+2011/04/22	Hiroki Endo
+	M script/pmod/V6evalTool/V6evalTool.pm
+		- Changed vSleep() derived from [users:01956]
+
+
+2010/07/23	Release 3.3.1
+	Official release
+
+
+2010/05/31	Hiroki Endo
+	M lib/pkt/LxLexer.cc
+		- Truncated the value calculated HMAC-SHA2-256 to 96-bits
+
+
+2010/03/31	Release 3.3.0
+	Official release
+
+
+2010/03/24	akisada
+	M script/pmod/V6evalTool/V6evalTool.pm
+		- Improved the internal initialization procedure at 
+		  processing macro processor for the packet definition
+
+
+2010/03/04	Hiroki Endo
+	M bin/Makefile
+	M bin/autorun/autorun.pl
+	A bin/indexgen/indexgen.pl, Makefile
+		- Separated a function to output index.html, summary.html, and
+		  report.html
+		- Changed to require the latest p5-YAML at this point
+
+ *** This change makes v6eval require FreeBSD 7.2-RELEASE or higher ***
+
+	M script/pmodV6evalTool/V6evalTool.pm
+		- Changed the filename of packet dump to fit with the standard
+		  pcap filename
+
+
+2009/12/04	akisada
+	M bin/remotes/manual/cleardefr.rmt, clearnc.rmt, clearprefix.rmt,
+	                     clearroute.rmt, ikeResetSA.rmt, ipsecClearAll.rmt,
+	                     ipsecEnable.rmt, ipsecResetSPD.rmt, ipsecSetSAD.rmt,
+	                     ipsecSetSPD.rmt, loginout.rmt, manualaddrconf.rmt,
+	                     mtuconfig.rmt, natpt.rmt, ping6.rmt, route.rmt,
+	                     setDNS.rmt, tcp6.rmt, tunnel.rmt, useTempAddr.rmt
+		- Corrected return values at the error
+
+
+2009/11/26	Release 3.2.0
+	Official release
+
+
+2009/11/25	akisada
+	M lib/Pz/DmObject.cc
+	M lib/Pz/Makefile
+	M lib/Pz/McICMPv6.cc
+	M lib/Pz/McICMPv6.h
+	M lib/Pz/McInit.cc
+		- Supported MLDv1/MLDv2 Multicast Listener Queries
+		  without recompilation
+			* This change removes USE_MLDV2_QUERY preprocessor macro
+			  at lib/Pz/Makefile
+		- Contributed by K.Kawaguchi
+
+	M include/stdpacket.def
+		- Added new macro FEM_icmp6_mldv2query() for MLDv2 packet definition
+			* FEM_icmp6_mldquery() macro can not be used for MLDv2 anymore
+		- Contributed by K.Kawaguchi
+
+	A bin/remotes/manual/mldv2DisableHUT.rmt
+	A bin/remotes/manual/mldv2DisableRUT.rmt
+	A bin/remotes/manual/mldv2EnableHUT.rmt
+	A bin/remotes/manual/mldv2EnableRUT.rmt
+	A bin/remotes/manual/mldv2ListenerAPI.rmt
+	A bin/remotes/manual/mldv2SetHUT.rmt
+	A bin/remotes/manual/mldv2SetRUT.rmt
+		- Added for IPv6 Ready Logo Program Phase-2 MLDv2 test
+		- Contributed by K.Kawaguchi
+
+	M lib/pkt/PktRcvClient.cc
+		- Corrected the comparison between signed and unsigned
+
+
+2009/08/27	akisada
+	M lib/Cm/CmMain.cc
+	M lib/Cm/CmMain.h
+	M lib/pkt/PktRcvClient.cc
+	M lib/pkt/RunEnv.cc
+	M lib/pkt/RunEnv.h
+		- Added -x option enabling hexadecimal dump to pktrecv
+
+
+2009/07/31	akisada
+	M lib/Pz/MfAlgorithm.cc
+	M lib/Pz/MfAlgorithm.h
+	M lib/pkt/LxLexer.cc
+		- Added rijndael_{128,192,256}_2() to packet definition
+		- Added aesctr_160_2() to packet definition
+
+
+2008/10/28	Release 3.1.0
+	Official release
+
+
+2008/10/27	akisada
+	M lib/Pz/Makefile
+	M lib/Pz/MfAlgorithm.cc
+	M lib/Pz/MfAlgorithm.h
+	A lib/Pz/crypto/camellia/camellia-api.c
+	A lib/Pz/crypto/camellia/camellia.c
+	A lib/Pz/crypto/camellia/camellia.h
+	M lib/pkt/LxLexer.cc
+		- support RFC 4312
+		  (The Camellia Cipher Algorithm and Its Use With IPsec)
+		- contributed by NTT
+			<http://info.isl.ntt.co.jp/crypt/camellia/patch.html>
+
+
+2008/10/23	Release 3.0.16
+	Official release
+
+
+2008/10/23	akisada
+	M lib/Cm/BtObject.cc
+		- avoid losing precision by casting
+
+
+2008/10/16	akisada
+	M lib/Pz/MfAlgorithm.cc
+	M lib/Pz/MfAlgorithm.h
+	M lib/pkt/LxLexer.cc
+		- disable rc5 when OPENSSL_NO_RC5 is true
+
+
+2008/07/01	Release 3.0.15
+	Official release
+
+
+2008/07/01	akisada
+	M lib/Pz/Makefile
+	M lib/Pz/MfAlgorithm.cc
+	M lib/Pz/MfAlgorithm.h
+	R lib/Pz/crypto/hmac/Makefile
+	R lib/Pz/crypto/hmac/Makefile.save
+	R lib/Pz/crypto/hmac/Makefile.ssl
+	R lib/Pz/crypto/hmac/hmac.c
+	R lib/Pz/crypto/hmac/hmac.h
+	R lib/Pz/crypto/hmac/hmactest.c
+	R lib/Pz/crypto/sha2/sha2.c
+	R lib/Pz/crypto/sha2/sha2.h
+	M lib/pkt/LxLexer.cc
+		- change HMAC-SHA-256, HMAC-SHA-384, and HMAC-SHA-512 to use openssl
+		- correct truncated output lengths according to RFC 4868
+
+	M lib/Pz/MfAlgorithm.cc
+	M lib/Pz/MfAlgorithm.h
+	M lib/pkt/LxLexer.cc
+		- require openssl-0.9.8 or later version of openssl
+		  to use HMAC-SHA-256, HMAC-SHA-384, or HMAC-SHA-512
+
+
+2007/05/30	Release 3.0.14
+	Official release
+
+
+2007/04/14	Release 3.0.14b1
+	Beta release for public review of major version up
+
+
+2008/04/04	akisada
+	M bin/remotes/manual/racontrol.rmt
+		- add parameter $rOpt_link0_prefix
+
+
+2007/04/03	Release 3.0.13
+	Official release
+
+
+2008/04/03	akisada
+	M bin/sigcomp/sigcomp.c
+	M bin/x509dec/x509dec.c
+	M lib/Pz/crypto/sha2/sha2.c
+		- keep consistency between OPENSSL_VERSION_NUMBER
+
+
+2008/04/02	akisada
+	Support FreeBSD 7.0-RELEASE
+		M lib/Pz/McIKE.h, MfAlgorithm.h
+		M lib/pkt/Bpfilter.h, RAFControl.h
+			- remove extra qualification
+
+		M lib/Pz/crypto/hmac/hmac.c
+			- remove conflicting types
+
+		M bin/x509dec/x509dec.c
+			- correct casting
+
+		M bin/sigcomp/sigcomp.c
+			- remove undeclaration
+
+		M bin/sigcomp/sigcomp.c
+			- cast argument 3 of d2i_PrivateKey()
+			- cast argument 3 of d2i_PublicKey()
+			- correct type qualifiers for function return type
+
+		M bin/x509dec/x509dec.c
+			- cast argument 2 of d2i_X509()
+			- cast argument 1 and 2 of strlcpy()
+			- correct type qualifiers for function return type
+
+		M bin/ivcomp/ivcomp.c
+		M bin/prfcomp/prfcomp.c
+			- convert between signed and unsigned correctly
+
+		M lib/pkt/PktCtlClient.cc, bufStat.h
+			- convert string between constant and non-constant correctly
+			- convert from time_t to long int correctly
+
+		M lib/pkt/RunEnv.cc
+			- convert from time_t to long int correctly
+
+		M lib/Pz/crypto/sha2/sha2.c
+			- correct type qualifiers for update function argument type
+			  in env_md_st structure
+
+		M lib/Cm/CmLexer.cc, CmQueue.cc
+			- convert string between constant and non-constant correctly
+
+
+2008/02/01	akisada
+	M bin/remotes/manual/racontrol.rmt
+		- change to use the names of variables defined in rfc4861
+
+
+2008/02/01	akisada
+	M bin/remotes/manual/racontrol.rmt
+		- add message about advertising interface
+		- update reference from rfc2461 to rfc4861
+
+
+2007/11/15	akisada
+	script/pmod/V6evalRemote/V6evalRemote.pm
+		- typo at rLogStdout()
+
+
+2007/05/25	Release 3.0.12
+	Official release
+
+
+2007/05/25	akisada
+	lib/Pz/MfAlgorithm.cc
+		- fix to freeing modified pointer in MfAES_XCBC::update()
+
+
+2007/03/16	Release 3.0.11
+	Official release
+
+
+2007/03/12	enokihara
+	Update remote file
+		- bin/remotes/manual/dhcp6s.rmt
+		- bin/remotes/manual/dhcp6c.rmt
+		- bin/remotes/manual/dhcp6r.rmt
+
+
+2007/03/07	akisada
+	lib/Pz/Makefile, MfAlgorithm.{cc,h}
+		- support ICV calculation using ESN
+			RFC 4303: IP Encapsulating Security Payload (ESP)
+			2.2.1. Extended (64-bit) Sequence Number
+
+
+2007/03/07	akisada
+	lib/Pz/Makefile, MfAlgorithm.{cc,h}
+	lib/pkt/LxLexer.cc
+		- support AES-CTR
+			RFC 3686: Using AES Counter Mode With IPsec ESP
+
+
+2006/08/31	akisada
+	lib/Pz/{MfAlgorithm,MvFunction}.h
+		- add some header files related to openssl
+			reported by Walter Jontofsohn
+
+	bin/checker/Makefile, bin/dhcomp/Makefile, bin/dhgen/Makefile,
+	bin/file2hex/Makefile, bin/ivcomp/Makefile, bin/pktbuf/Makefile,
+	bin/pktctl/Makefile, bin/pktrecv/Makefile, bin/pktsend/Makefile,
+	bin/prfcomp/Makefile, bin/sigcomp/Makefile, bin/x509dec/Makefile,
+	lib/Cm/Makefile, lib/pkt/Makefile
+		- add .depend to ${CLEANFILES}
+
+
+2006/04/28	Release 3.0.10
+	Official release
+
+
+2006/04/28	akisada
+	bin/remotes/manual/racontrol.rmt
+		- add parameter
+			raflagsM, raflagsO, pinfoflagsL, pinfoflagsA
+
+
+2006/04/07	Release 3.0.9
+	Official release
+
+
+2006/03/09	akisada
+	Bug Fix:
+		correct calculation about DH
+			- bin/dhcomp/dhcomp.cc
+
+
+2006/02/27	Release 3.0.8
+	Official release
+
+
+2006/02/16	Hiroki.Endou@jp.yokogawa.com
+	Future use:
+		Avoid race condition of signal handling between v6eval and koi
+			- script/pmod/V6evalTool/V6evalTool.pm
+
+
+2006/02/06	Release 3.0.7
+	Official release
+
+
+2006/02/03	akisada
+	Future use:
+		Avoid race condition of signal handling between v6eval and koi
+			- script/pmod/V6evalRemote/V6evalRemote.pm
+			- script/pmod/V6evalTool/V6evalTool.pm
+
+
+2006/02/02	akisada
+	Bug Fix:
+		correct message for NUT tunnel configuration
+			- bin/remotes/manual/tunnel.rmt
+
+
+2006/01/19	Release 3.0.6
+	Official release
+
+
+2006/01/18	akisada
+	Debug use:
+		Add DHCP_DBG macro to dump calculation information
+		for Authentication of DHCP Messages
+			- lib/Pz/Makefile
+			- lib/Pz/MvFunction.cc
+			- lib/Pz/debug.h
+
+	Future use:
+		Add environment variable 'V6EVAL_WITH_KOI'
+			- ./script/pmod/V6evalTool/V6evalTool.pm
+
+
+2006/01/17	akisada
+	o avoid to use BSDPAN
+	o avoid to filename conflict of using case-insensitive filesystem
+		- script/pmod/V6eval{Common,Remote,Tool}/Makefile (was makefile)
+		- script/pmod/V6eval{Common,Remote,Tool}/Makefile.PL
+
+
+2006/01/13	Release 3.0.5
+	Official release
+
+
+2006/01/10	akisada
+	Bug Fix: correct Internet Timestamp length
+		- lib/Pz/McIPv4.cc
+
+
+2005/11/24	Release 3.0.4
+	Official release
+
+
+2005/11/22	enokihara
+	Update remote file
+		- bin/remotes/manual/dhcp6s.rmt
+
+
+2005/11/14	akisada
+	Update remote file
+		- bin/remotes/manual/tunnel.rmt
+
+
+2005/11/10	Release 3.0.3
+	Official release
+
+
+2005/11/10	akisada
+	Update remote files
+		- bin/remotes/manual/dhcp6c.rmt
+		- bin/remotes/manual/dhcp6r.rmt
+		- bin/remotes/manual/dhcp6s.rmt
+
+
+2005/11/02	akisada
+	Bug Fix: typo
+		- lib/Pz/McInit.cc
+
+
+2005/07/21	akisada
+	Bug Fix: avoid infinite I/O blocking when using packet filtering
+		- lib/pkt/BpfAgent.{cc,h}, Bpfilter.{cc,h}
+
+
+2005/07/19	Release 3.0.2
+	Official release
+
+
+2005/07/07	akisada
+	Support: AES-XCBC-MAC-96
+
+
+2005/07/05	Release 3.0.1
+	Official release
+
+
+2005/07/05	akisada
+	script/pmod/V6evalCommon/makefile
+	script/pmod/V6evalRemote/makefile
+	script/pmod/V6evalTool/makefile
+		- change not to install perllocal.pod file
+		  related to FreeBSD ports system issue
+
+
+2005/05/30	akisada
+	support X509v3 Subject Alternative Name decoding
+		- bin/x509dec/x509dec.c
+
+	Bug Fix: correct the declaration for return value
+	         (V6evalTool::getField())
+		- script/pmod/V6evalTool/V6evalTool.pm
+
+
+2005/05/27	akisada
+	Bug Fix: correct to get public key from certification
+		- bin/x509dec/x509dec.c
+	Bug Fix: correct calculation of signing/verifying signature
+		- bin/sigcomp/sigcomp.c
+
+
+2005/05/25	Release 3.0
+	Official release
+
+
+2005/05/25	akisada
+	Change not to support remote files
+		- bin/remotes
+
+
+2005/05/09	akisada
+	Merge with B_ISAKMP branch
+		- support RFC 2408, ISAKMP
+
+
+2005/01/18	Release 2.3.2
+	Official release
+
+
+2005/01/18	Hiroki.Endou@jp.yokogawa.com
+	Support IPv6 Ready Logo Program: Phase-2 IPv6 Core Protocols
+
+
+2005/01/18	akisada
+	Add remote files for usagi-i386: racontrol.rmt sysctl.rmt 
+
+		contributed by yoshfuji@linux-ipv6.org
+
+
+2005/01/12	akisada
+	Correct pid file name in bin/remotes/usagi-i386/rtadvd.rmt
+
+		reported by CHINEN@jp.ibm.com
+
+
+2005/01/12	by akisada
+	Support FreeBSD 6.0-CURRENT
+		- bin/pktbuf/Makefile
+		- bin/pktrecv/Makefile
+		- bin/checker/Makefile
+		- bin/dhcomp/Makefile
+		- bin/dhgen/Makefile
+		- lib/Makefile.inc
+
+
+2005/01/11	by akisada
+	Bug Fix: sample/ping_frag/packet.def
+	         sample/timeexceeded/packet.def
+		- fix syntax errors
+
+		reported by suz@kame.net
+
+
+2004/10/01	Release 2.3.1
+	Official release
+
+
+2004/09/30	by akisada
+	Allow to use the keyword 'stop' as 'upper' value in packet definition
+	for IPv6 Ready Logo Program Phase-2 IPv6 Core Protocols
+
+
+2004/09/30	by akisada
+	Add remote pim6dd.rmt
+	for IPv6 Ready Logo Program Phase-2 IPv6 Core Protocols
+
+		- freebsd-i386/pim6dd.rmt
+		- kame-freebsd/pim6dd.rmt
+		- manual/pim6dd.rmt
+		- unknown/pim6dd.rmt
+
+
+2004/09/30	Release 2.3
+	Official release
+
+
+2004/09/21	by akisada
+	Support IPv6 Ready Logo Program: Phase-2 IPv6 Core Protocols
+
+
+2004/09/10	Release 2.3b1
+	Internal beta release just for FreeBSD ports system
+
+
+2004/09/08	by akisada
+	Support new protocol:
+		RFC 1157,  SNMP
+		RFC 1905,  Protocol Operations for SNMPv2
+
+		contributed by Linux Technology Center, IBM
+
+
+2004/08/12	by akisada
+	Fix: support to compile on FreeBSD 5.2-CURRENT
+
+
+2004/08/10	by akisada
+	Fix: remote files related to DHCPv6
+		- bin/remotes/unitedlinux/dhcp6c.rmt
+		- bin/remotes/unitedlinux/dhcp6s.rmt
+
+		contributed by Linux Technology Center, IBM
+
+
+2004/08/10	by akisada
+	Fix: remote files related to IGMPv3
+		- bin/remotes/unitedlinux/igmpv3.rmt
+		- bin/remotes/unitedlinux/igmpv3config.rmt
+		- bin/remotes/manual/igmpv3.rmt
+		- bin/remotes/manual/igmpv3config.rmt
+
+		contributed by Linux Technology Center, IBM
+
+
+2004/06/22	by akisada
+	Fix: remote files related to MLDv2
+		- bin/remotes/unitedlinux/mldv2.rmt
+		- bin/remotes/unitedlinux/mldv2config.rmt
+		- bin/remotes/manual/mldv2.rmt
+		- bin/remotes/manual/mldv2config.rmt
+
+		contributed by Linux Technology Center, IBM
+
+	Fix: update ICMPv6 type of MLDv2 Report to 143 assigned by IANA
+
+		contributed by Linux Technology Center, IBM
+
+
+2004/04/02	Release 2.2
+	Official new version release
+
+
+2004/03/19	by kenta
+	fix remote commands for manual
+	when you select system=manual,
+	you don't need serial interface on tester.
+
+
+2004/03/16	by kenta
+	change NUT Type name :  embedded -> special
+	add new exit code : exitSkip
+
+
+2004/03/09	by akisada
+	fix the protocol number and ICMPv6 type around MIPv6
+
+
+2004/03/09	by akisada
+	remove codes related on old protocol
+	<draft-troan-dhcpv6-opt-prefix-delegation-01.txt>
+
+
+2004/03/09	by akisada
+	Bug Fix: lib/pkt/PzParse.y
+		- fix syntax errors
+		  FreeBSD yacc doesn't detect these syntax errors,
+		  but it seems that Debian yacc could detect them.
+
+		reported by suz@crl.hitachi.co.jp
+
+
+2004/02/25	by akisada
+	Update protocol version:
+		NEMO <draft-ietf-nemo-basic-support-02.txt>
+
+
+2004/01/26	by ozoe
+	IPv6 Prefix Options and DNS Configuration options for DHCPv6
+	have becomed RFC. So I was fixed option code for DHCPv6 asigned by IANA.
+
+
+2003/12/26	Release 2.2b6
+	Official beta release
+
+
+2003/12/24	by akisada
+	add new NUT Type - embedded
+
+
+2003/12/22	Release 2.2b5
+	Official beta release
+
+
+2003/12/05	by akisada
+	Support new protocol
+		Nemo <draft-ietf-nemo-basic-support-01.txt>
+
+	Currently we are using following value for option type
+		Mobile Network Prefix Option		: 6
+		Mobile Network Prefix Length Option	: 7
+
+	If you want to change above vales,
+	you need to edit lib/Pz/Makefile.
+
+	lib/Pz/Makefile.
+	----------------------------------------------------------------
+	#CXXFLAGS+=     -DTBD_OPT_MH_MOB_NETWORK_PREF=6
+	#CXXFLAGS+=     -DTBD_OPT_MH_MOB_NETWORK_PREF_LEN=7
+
+
+2003/12/04	by akisada
+	Support new protocol
+		IKE
+			contributed by Linux Technology Center, IBM
+
+	update remote control files:
+		- unitedlinux SP2a
+			contributed by Linux Technology Center, IBM
+
+
+2003/11/21	Release 2.2b4
+	Support ports-current
+
+
+2003/11/17	by akisada
+	Update Mobility Header Protocol Number
+	Update ICMPv6 Type Numbers for MIPv6
+
+		Mobility Header protocol number: 135
+		ICMP6 DHAAD Request Type       : 144
+		ICMP6 DHAAD Reply Type         : 145
+		ICMP6 MPS Type                 : 146
+		ICMP6 MPA Type                 : 147
+
+		You can change these value at lib/Pz/Makefile
+
+
+2003/11/04	by akisada
+	Update rPutfile() in script/pmod/V6evalRemote/V6evalRemote.pm
+		- Support cu/tip command on freebsd-current
+
+
+2003/10/30	Release 2.2b3
+	Support ports-current
+
+
+2003/10/30	Release 2.2b2
+	Support gcc 3.3.1(freebsd-current)
+
+
+2003/10/20	by akisada
+	Support new protocol, new packet format:
+		- RFC 2113: IP Router Alert Option
+		- RFC 1112: Host Extensions for IP Multicasting
+		- RFC 2236: Internet Group Management Protocol, Version 2
+		- RFC 3376: Internet Group Management Protocol, Version 3
+
+			If you want to use IGMPv1/v2 Query,
+			define NOT_USE_IGMPV3_QUERY in lib/Pz/Makefile
+			Currently IGMPv1/v2 Query is incompatible with
+			IGMPv3 Query.
+
+			contributed by Linux Technology Center, IBM
+
+	Bug Fix:
+		- MLDv2 Aux Data Len calculation
+			contributed by Linux Technology Center, IBM
+
+
+2003/10/14	Release 2.2b1
+	Support new protocol:
+		- draft-vida-mld-v2-07.txt: MLDv2 for IPv6
+			contributed by Linux Technology Center, IBM
+
+			If you want to use MLDv2 Query,
+			define USE_MLDV2_QUERY in lib/Pz/Makefile
+			Currently MLDv2 Query is incompatible with MLDv1 Query.
+
+		- RFC 3261: SIP
+
+	Support new target:
+		- unitedlinux SP2a
+			contributed by Linux Technology Center, IBM
+	Bug Fix:
+		- authenticator calculation of Mobility Header
+		- checksum calculation of Mobility Header
+
+
+2003/10/10	by akisada
+	Add new macro:
+		- include/stdpacket.def
+			- FEM_tcp4()
+			- FEM_tcp4_exth()
+			- FEM_tcp6()
+			- FEM_tcp6_exth()
+
+	Add new sample:
+		- sample_stddef/tcp_handshake
+
+		  This can simulate following items
+			- Basic 3-Way Handshake for Connection Synchronization
+			- Normal Close Sequence
+
+
+2003/10/09	by akisada
+	Support new protocol:
+		- MLDv2 for IPv6 <draft-vida-mld-v2-07.txt>
+
+		- IANA hasn't assigned an ICMPv6 message type for MLDv2 reports.
+		  Currently we assign 206 for MLDv2 reports.
+		  If you want to change this value,
+		  define TBD_MLDV2_REPORT in lib/Pz/Makefile
+
+		- If you want to use MLDv2 Query,
+		  define USE_MLDV2_QUERY in lib/Pz/Makefile
+		  Currently MLDv2 Query is incompatible with MLDv1 Query.
+
+		contributed by Linux Technology Center, IBM
+
+
+2003/10/08	by akisada
+	Support new target: unitedlinux SP2a
+		- bin/remotes/unitedlinux/*.rmt
+		- script/pmod/V6evalRemote/V6evalRemote.pm
+
+		contributed by Linux Technology Center, IBM
+
+
+2003/09/08	by akisada
+	Fix authenticator calculation of Mobility Header
+		- initialize checksum field of MH certainly.
+
+
+2003/08/27	by akisada
+	Add new exit code - exitInitFail (Initialization Fail)
+
+
+2003/07/24	by akisada
+	Import new remote files:
+		- linux-v6/dhcp6c.rmt
+		- linux-v6/dhcp6s.rmt
+		- linux-v6/rtadvd.rmt
+
+		contributed by Linux Technology Center, IBM
+
+
+2003/07/16	by akisada
+	Fix checksum calculation of Mobility Header
+	which contains too short value in Header Len field.
+
+
+2003/07/09	by akisada
+	Add new protocol
+		- RFC 3261: SIP
+
+	Add new funtion vSend2(), vRecv2()
+		- can extract payload data
+
+
+2003/05/29	Release 2.1.1
+	support gcc 3.X
+
+
+2003/05/23	Release 2.1
+	support FreeBSD 5.0-RELEASE
+
+	Add new packet format
+		RIPng
+			RFC 2080
+		DNS
+			RFC 1035
+			RFC 1183
+			RFC 1664
+			RFC 1886
+			RFC 2782
+			RFC 2915
+		DHCPv6
+			draft-ietf-dhc-dhcpv6-opt-dnsconfig-02.txt
+			draft-ietf-dhc-dhcpv6-opt-timeconfig-01.txt
+			draft-ietf-dhc-dhcpv6-28.txt
+			draft-ietf-dhc-dhcpv6-opt-prefix-delegation-02.txt
+		MIPv6 ID-21
+			draft-ietf-mobileip-ipv6-21.txt
+		Modified Router Advertisement & Route Information Option
+			draft-ietf-ipv6-router-selection-02.txt
+
+
+2002/11/19	Release 2.0.2
+	support FreeBSD 4.7 w/ KAME
+
+
+2002/11/15	Release 2.0.1
+	support FreeBSD 4.7 as TN
+
+
+2002/11/15
+	Update remote files
+		- v6eval/bin/remotes/usagi-i386/
+
+		contributed by USAGI Project
+
+
+2002/10/18	Release 2.0
+
+
+2002/09/16
+	Add remote files
+		- v6eval/bin/remotes/usagi-i386/mip6EnableMN.rmt
+		- v6eval/bin/remotes/mipl/mip6EnableMN.rmt
+
+		contributed by Linux Technology Center, IBM
+
+
+2002/07/16	Release 2.0b1
+	support MIP6 <draft-ietf-mobileip-ipv6-15.txt>
+
+
+2001/10/19	Release 1.3
+	Support MIP6 <ID-13> wich IPsec
+	Fix calculate checksum for MIP6 <ID-13> pakcet with HA option.
+	Change terminal program from tip to cu.
+	Change RCS tag name. Id -> TAHI
+        Add new functions to V6evalTool
+		vRemoteAsync()     ... asynchronous execution of remote control
+		vRemoteAsyncWait() ... wait vRemoteAsync()
+
+
+2001/09/20
+	Add HPUX remote files
+		- v6eval/bin/remotes/hpux
+
+		contributed by Anthony Galan <t_galan@yahoo.com>
+
+
+2001/06/14
+	Add AIX remote files
+		- v6eval/bin/remotes/aix
+
+		contributed by TIPSTER6 project <http://tipster6.ik.bme.hu/>
+
+
+2001/04/03
+	Replace telebit-tbc2k remote files
+		- v6eval/bin/remotes/telebit-tbc2k
+
+		contributed from Ericsson Telebit
+
+
+2000/12/01	Release 1.2
+	support MIP6 <draft-ietf-mobileip-ipv6-13.txt>
+
+	  Destination Options Header:
+		Binding Update Option
+		Binding Acknowledgement Option
+		Binding Request Option
+		Home Address Option
+			Pad1 Sub-Option
+			PadN Sub-Option
+			Unique Identifier Sub-Option
+			Alternate Care-of Address Sub-Option
+	  ICMPv6:
+		Modified Router Advertisement
+			Modified Prefix Information Option
+			Advertisement Interval Option
+			Home Agent Information Option
+		ICMP Home Agent Address Discovery Request (use 143 as ICMP Type)
+		ICMP Home Agent Address Discovery Reply   (use 144 as ICMP Type)
+
+
+2000/08/03
+	Move bin/*.rmt to bin/unknown/*.rmt and change .rmt search path.
+	Remove 'extern "C"' in lib/Pz/PvOctet.cc for FreeBSD 4.1.
+
+
+2000/07/28	Release 1.1
+	Does not support FreeBSD2.2.8 any more.
+	Ported : FreeBSD 4.X
+	Separate remote control file for each target.
+		# See v6eval/bin/remotes/00README
+	New supported implementations:
+		# NOTE: Does not fully support for some implementations
+		Cisco IOS
+		Hitachi GR2000
+		IIJ SEIL
+		MGCS SJ6
+		Microsoft Windows2000
+		NetBSD
+		Sun Solaris
+		Telebit TBC2000
+	Bug fix.
+
+
+2000/03/27	Release 1.0
+	change addresses used in conformance test. 
+	move remote control file from ct/*/* to v6eval/bin/remotes.
+
+
+2000/02/15	Release 0.6
+	rewrite kernel patch
+		If you use a kernel with old patch,
+		you need to rebuild kernel with new patch.
+	Ported : FreeBSD 3.4
+	bug fix
+
+
+1999/12/10
+	Add filter : pass IPv6 packet only or ALL.
+	Ported : FreeBSD 3.3
+	bug fix
+
+
+1999/10/28      Release 0.4
+        Header:
+		IPv4 & IPv4 Header Option
+		TCP Option
+		AH, ESP Header
+        Function:
+		{en,de}cription
+		authentication value caliculate
+
+
+1999/08/28 by nov
+	"RemoteLogout" and "RemoteMethod" is available in tn.def
+
+
+1999/08/02      Release 0.3
+        Header:
+		TCP header
+        Function:
+		"stop" function
+        Ported:
+		FreeBSD 3.2
+
+
+1999/05/01      Release 0.2
+	bugs fix
+	support "Tunnel Encapsulation Header Option" &
+		"Redirected Header Option"
+	record all packets by tcpdump.
+	add patch function.
+
+
+1999/04/26 by nov
+	"RemoteSpeed" entry is available in /usr/local/v6eval/etc/tn.def.
+
+
+1999/04/14	Release 0.1
+	first public release
+
+
+
+                                                      [end of CHANGELOG]

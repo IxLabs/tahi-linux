@@ -1,0 +1,13 @@
+spdflush;
+flush;
+add fe80:3::200:ff:fe00:9999 fe80:3::290:27ff:fe15:353 any 1000 -p esp -E 3des-cbc "012345678901234567890123";
+add fe80:3::290:27ff:fe15:353 fe80:3::200:ff:fe00:9999 any 1000 -p esp -E 3des-cbc "012345678901234567890123";
+
+add fe80:3::200:ff:fe00:9999 fe80:3::290:27ff:fe15:353 any 1000 -p ah -A hmac-md5 "hagehogehogehoge";
+add fe80:3::200:ff:fe00:9999 fe80:3::290:27ff:fe15:353 any 2000 -p ah -A hmac-sha1 "hogehagehogehogehoge";
+add fe80:3::290:27ff:fe15:353 fe80:3::200:ff:fe00:9999 any 1000 -p ah -A hmac-md5 "hagehogehogehoge";
+
+spdadd fe80:3::290:27ff:fe15:353 fe80:3::200:ff:fe00:9999 any -P ipsec esp/require ah/require;
+
+dump;
+spddump;

@@ -1,0 +1,246 @@
+//
+// Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+// Yokogawa Electric Corporation, YDC Corporation,
+// IPA (Information-technology Promotion Agency, Japan).
+// All rights reserved.
+// 
+// Redistribution and use of this software in source and binary forms, with 
+// or without modification, are permitted provided that the following 
+// conditions and disclaimer are agreed and accepted by the user:
+// 
+// 1. Redistributions of source code must retain the above copyright 
+// notice, this list of conditions and the following disclaimer.
+// 
+// 2. Redistributions in binary form must reproduce the above copyright 
+// notice, this list of conditions and the following disclaimer in the 
+// documentation and/or other materials provided with the distribution.
+// 
+// 3. Neither the names of the copyrighters, the name of the project which 
+// is related to this software (hereinafter referred to as "project") nor 
+// the names of the contributors may be used to endorse or promote products 
+// derived from this software without specific prior written permission.
+// 
+// 4. No merchantable use may be permitted without prior written 
+// notification to the copyrighters. However, using this software for the 
+// purpose of testing or evaluating any products including merchantable 
+// products may be permitted without any notification to the copyrighters.
+// 
+// 
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHTERS, THE PROJECT AND 
+// CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING 
+// BUT NOT LIMITED THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+// FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.  IN NO EVENT SHALL THE 
+// COPYRIGHTERS, THE PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+// CONTRACT,STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+// THE POSSIBILITY OF SUCH DAMAGE.
+//
+
+//======================================================================
+// Frame
+Frame_Ether _ping1st {
+	header=eth_auto;
+	packet=ip_ping1st;
+}
+//----------------------------------------------------------------------
+Frame_Ether _ping2nd {
+	header=eth_auto;
+	packet=ip_ping2nd;
+}
+//----------------------------------------------------------------------
+Frame_Ether _ns {
+	header=eth_nut2tnsol;
+	packet=ip_ns;
+}
+//----------------------------------------------------------------------
+Frame_Ether _na {
+	header=eth_auto;
+	packet=ip_na;
+}
+//----------------------------------------------------------------------
+Frame_Ether _reply {
+	header=eth_auto;
+	packet=ip_reply;
+}
+
+//======================================================================
+// Ether
+Hdr_Ether eth_auto {
+//	SourceAddress=auto;
+//	DestinationAddress=auto;
+//	Type=auto; // 0x86dd (IPv6)
+}
+//----------------------------------------------------------------------
+Hdr_Ether eth_nut2tnsol {
+//	SourceAddress=nutether();
+	DestinationAddress=v62ethermulti(v6merge("ff02::1:ff00:0000",104,tnv6()));
+//	Type=0x86dd; // ip6
+}
+
+//======================================================================
+// Packet
+Packet_IPv6 ip_ping {
+	header=v6auto;
+	upper=icmp_ping;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_ping1st {
+	header=v6auto;
+	exthdr=frag_1st;
+	upper=icmp_echo_1st;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_ping2nd {
+	header=v6auto;
+	exthdr=frag_2nd;
+	upper=icmp_echo_2nd;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_ns {
+	header=v6nut2tnsol;
+	upper=icmp_ns;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_na {
+	header=v6tn2nutadv;
+	upper=icmp_na;
+}
+//----------------------------------------------------------------------
+Packet_IPv6 ip_reply {
+	header=v6auto;
+	upper=icmp_reply;
+}
+
+//======================================================================
+// IPv6
+Hdr_IPv6 v6auto {
+//	Version=6;
+//	SourceAddress=
+//	DestinationAddress=
+//	FlowLabel=0;
+//	TrafficClass=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+//	HopLimit=64;
+//	PayloadLength=16;
+}
+//----------------------------------------------------------------------
+Hdr_IPv6 v6nut2tnsol {
+//	SourceAddress=nutv6();
+	DestinationAddress=tn2v6("ff02::1:ff00:0000",104);
+//	DestinationAddress=any;
+//	FlowLabel=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+	HopLimit=255;
+//	PayloadLength=16;
+}
+//----------------------------------------------------------------------
+
+Hdr_IPv6 v6tn2nutadv {
+//	SourceAddress=tnv6();
+//	DestinationAddress=nutv6();
+//	FlowLabel=0;
+//	NextHeader=58;
+//	TrafficClass=0;
+//	HopLimit=64;
+	HopLimit=255;
+//	PayloadLength=16;
+}
+
+//======================================================================
+Hdr_Fragment frag_1st {
+	NextHeader=58;
+//	Reserved1=ZERO;
+//	FragmentOffset=0;
+//	Reserved2=0;
+	MFlag=1;
+	Identification=2147483648;
+}
+
+Hdr_Fragment frag_2nd {
+	NextHeader=58;
+//	Reserved1=ZERO;
+	FragmentOffset=2;
+//	Reserved2=0;
+//	MFlag=0;
+	Identification=2147483648;
+}
+
+//======================================================================
+// ICMPv6
+ICMPv6_EchoRequest icmp_ping {
+//	Type=128;
+//	Code=0;
+//	Checksum=0x2c90;
+//	Identifier=0x9008;
+//	SequenceNumber=0;
+	payload=apl;
+}
+//----------------------------------------------------------------------
+ICMPv6_EchoReply icmp_reply {
+//	Type=129;
+//	Code=0;
+//	Checksum=0x2b90;
+//	Identifier=0x9008;
+//	SequenceNumber=0;
+	payload=apl;
+}
+//----------------------------------------------------------------------
+// NS
+ICMPv6_NS icmp_ns {
+//	Type=135;
+//	Code=0;
+//	Checksum=0xbd2d;
+//	Reserved=zero;
+//	TargetAddress=tnv6();
+	option=sslopt_nut;
+}
+//----------------------------------------------------------------------
+// NA ("TN -> NUT")
+ICMPv6_NA icmp_na {
+//	Type=136;
+//	Code=0;
+//	Checksum=0xb32a;
+//	Reserved=zero;
+//	RFlag=0;
+	RFlag=1;
+	SFlag=1;
+	OFlag=1;
+	TargetAddress=tnv6();
+	option=ttlopt_tn;
+}
+
+//======================================================================
+Opt_ICMPv6_TLL ttlopt_tn {
+//	Type=2;
+//	Length=1;
+	LinkLayerAddress=tnether();	
+}
+//----------------------------------------------------------------------
+Opt_ICMPv6_SLL sslopt_nut {
+//	Type=1;
+//	Length=1;
+	LinkLayerAddress=nutether();
+}
+
+//======================================================================
+// Data
+Payload apl {
+	data=repeat(0x01,500);
+}
+//----------------------------------------------------------------------
+// Data
+Payload icmp_echo_1st {
+	data=substr(ip_ping,40,16);
+}
+//----------------------------------------------------------------------
+// Data
+Payload icmp_echo_2nd {
+	data=substr(ip_ping,56,492);
+}

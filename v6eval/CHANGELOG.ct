@@ -1,0 +1,259 @@
+		CHANGELOG for IPv6 Conformance Test Package
+
+		      $Date: 2003/06/10 13:35:57 $
+
+2003/06/11	Release 2.1.1
+	New tests:
+		- Mobility Support in IPv6
+			<draft-ietf-mobileip-ipv6-20.txt>
+		- Prefix Delegation
+			<draft-ietf-dhc-dhcpv6-opt-prefix-delegation-02.txt>
+		- DNS Discovery
+			<draft-ietf-ipv6-dns-discovery-07.txt>
+		- Default Router Preferences, More-Specific Routes, and Load Sharing
+			<draft-ietf-ipv6-router-selection-02.txt>
+		- Default Address Selection for Internet Protocol version 6 (IPv6)
+			RFC 3484
+
+2002/11/19      Release 2.0.2
+	support FreeBSD 4.7 w/ KAME
+
+2002/11/15      Release 2.0.1
+	support FreeBSD 4.7 as TN
+
+2002/10/18      Release 2.0
+
+2002/09/16
+	New tests:
+		<draft-ietf-mobileip-ipv6-15.txt>	Mobility Support in IPv6
+			- Mobile Node tests
+
+                contributed by Linux Technology Center, IBM
+
+2002/07/16 Release 2.0b1
+	New tests:
+		- MIP6 tests (ID-15)
+		- IPv6 Specification for LCNA
+		- ICMPv6 for IPv6 Specification for LCNA
+		- Neighbor Discovery for LCNA
+		- IPv6 Stateless Address Autoconfiguration for LCNA
+		- IPv6 Path MTU Discovery for LCNA
+		- IPSec AH and ESP for IPv6 for LCNA
+		- IPSec AH and ESP for IPv6(UDP) for LCNA
+		- IPSec AH and ESP for IPv6(granularity) for LCNA
+
+2001/10/19 Release 1.3
+	Official release
+
+2001/10/16 by toba
+	Update tests: spec
+		- Add judge pattern for 'HopLimit 1 to Router' test.
+		  HopLimit in data area in ICMP error packet is 0 or 1.
+
+	New tests:
+		IPsec UDP test is added.
+		- IPv4 only.
+		- Host only.
+
+2001/10/11 by hoshino
+	Update tests: stateless-addrconf
+		- DAD checking tests on Manual Address Configuration
+		  were refined, then timing critical problem had been
+		  solved. (Using vRemoteAsync(), vRemoteAsyncWait())
+		- The test was removed and replaced by the new test.
+		  removed: "Check if ValidLifetime is NOT reset on NUT by RA
+		            with same prefix (before expiry, same VLT) "
+		  new    : "Check if ValidLifetime is reset on NUT by RA
+		            with same prefix (before expiry, same VLT) "
+		- The test "DAD is performed on NUT by Stateless Global
+		  address autoconfiguration" results changed from FAIL
+		  to WARN if DAD NS didn't come on Global address auto-
+		  configuration and link-local DAD didn't duplicate in
+		  initialization phase, because RFC2462 says that an
+		  implementation MAY choose to skip DAD for additional
+		  addresses derived from the same interface identifier.
+
+2001/10/11 by akisada
+	Update tests: natpt
+		contributed by Ericsson Telebit
+
+2001/10/04 by akisada
+	New tests:
+		draft-ietf-mobileip-ipv6-13    Mobility Support in IPv6
+
+		- only CN and HA tests
+		- It doesn't support IPsec test
+
+2001/09/01 by akisada
+	New tests:
+		robustness tests related to IPv6 Specification
+
+2001/04/03 by akisada
+	New tests:
+		RFC 2765    SIIT
+		RFC 2766    NAT-PT
+
+		contributed by Ericsson Telebit
+
+2001/01/26
+	Fixed test:
+		pmtu/acceptRAwithMTUOption.seq
+			whose condition was too strict.
+		routerRecvRs.seq
+			could not accept solicited unicast RA.
+
+2000/12/01 Release 1.2
+	Official release
+
+	Delete test:
+		The following test is not coformity with RFC, so it's skipped over.
+		- stateless-addrconf
+		   "Check if ValidLifetime is NOT reset on NUT by RA
+		   with same prefix (before expiry, same VLT) "
+
+	And some bug fix
+
+2000/07/28 Release 1.1
+        Official release
+
+	New tests:
+		IPSec AH and ESP for IPv4
+		 (RFC2401,RFC2402,RFC2406, ...etc)
+		 Add more tests.
+	
+	Change perl path (/usr/local/bin/perl -> /usr/bin/perl).
+
+2000/03/28 Release 1.0
+        Official release
+
+	New tests:
+		IPSec AH and ESP for IPv4
+		 (RFC2401,RFC2402,RFC2406, ...etc)
+		 Although it's under development, we believe it's useful.
+
+2000/02/16 Release 0.6
+        6th official release
+
+        New tests:
+                IPv6 over IPv4 Tunnel (draft-ietf-ngtrans-mech-04)
+        Many documents are fixed.
+        ##Release 0.5 is a missing release number
+
+1999/12/04 by hoshino and toba
+	New tests:
+		IPSec AH and ESP for IPv6
+		(RFC2401,RFC2402,RFC2406, ...etc)
+		Many documents are not fixed yet.
+
+1999/10/28 Release 0.4
+	4th official release
+
+1999/10/27 by nobu
+	New tests:
+		ICMPv6 for IPv6 Specification (RFC2463)
+
+1999/10/27 by nov
+	New tests:
+		Neighbor Discovery:
+		- RA/RS for a router
+
+1999/10/27 by hoshino
+	Stateless address auto configuration:
+	- WARN about strange NS,NA on DAD.
+
+1999/10/15 by nov
+	Neibhor Discovery:
+	- All log formats were fitted for HTML.
+	- Built-in failure analysis.
+
+1999/7/30 Release 0.3
+	3rd official release
+
+1999/7/30 by hoshino
+	Many documents were refined about stateless-addrconf
+
+1999/7/24 by nov
+	New tests:
+		Neighbor Discovery:
+		- Redirect messages for a host
+
+1999/07/13 by toba
+	New tests:
+		IPv6 Specification (RFC2460)
+
+1999/07/12 by nov
+	New test:
+		Redirect messages for a host
+
+1999/06/32 by nov
+	NEC Libra 2.0 is supported.
+
+1999/06/14 by nov
+	HITACHI NR60 is supported.
+
+1999/06/07 by nobu
+	New tests:
+		Path MTU Discovery
+
+1999/06/07 by hoshino
+	New tests:
+	- stateless-addrconf
+	  2.2.1 Router Advertisement Processing
+	  Irregular RA
+	    ADDRSTATE_sameprfxes_order
+	        probe PrefixOptions processing order of same prefix in one RA
+          Resetting Lifetime
+	    ADDRSTATE_reset_VLT
+	        check if ValidLifetime is reset by RA with same prefix
+	    ADDRSTATE_not_reset_VLT
+	        check if ValidLifetime is not reset by RA with same prefix
+	  2.2.2 Address Lifetime Expiry
+	    ADDRSTATE_pkt_receiving
+	        check packet receiving and address lifetime expiry
+	    ADDRSTATE_src_select
+	        check src address selection and address lifetime expiry
+
+1999/06/07 by nov
+	New tests:
+	- RS/RA tests for hosts
+
+1999/05/17 by nov
+	New tests:
+	- Sending RS for a host:
+		hostSendRs.*
+		hostSendRsAfterSolicitedRa.*
+		hostSendRsAfterUnsolicitedRa.*
+	- Receiving RS for a host:
+		hostRecvRs.*
+
+1999/05/11 by nov
+	New tests:
+	- NS vs IsRouter flag: recvNsRFlag.*
+	- NA vs IsRouter flag: recvNaRFlag.*
+
+1999/04/26 by hoshino
+	Debug:
+	DADSendNS_DADPostSendNS.seq and BASIC.def
+	Anycast address related tests (anycast addr MUST not be src addr).
+
+1999/04/23 by hoshino
+	Delete test:
+	The following test is not in conformity with RFC2462.
+	- stateless-addrconf/
+	  "Global address is not configured when received Valid RA
+           after Link-local DAD Fail"
+	  ./ADDRCONFFail.seq -pkt GLOBAL0_valRA_NoLLOCAL.def
+	     addrconf=ra init=DADFail_boot
+
+1999/04/23 by nov
+	Bug fix:
+	The following tests ignore DAD packets that
+	an RA with a prefix option causes
+	- nd/sendNsBasicGlobGlob.seq
+	- nd/sendNsBasicGlobLink.seq
+	- nd/sendNsBasicLinkGlob.seq
+
+1999/04/14	Release 0.1
+	1st official release
+
+							[end of CHANGELOG]
