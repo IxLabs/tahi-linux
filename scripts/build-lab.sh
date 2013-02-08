@@ -202,6 +202,14 @@ cleanup() {
     screen -X quit
 }
 
+is_host() {
+    grep "host" $HOME/.options &> /dev/null
+}
+
+is_router() {
+    grep "router" $HOME/.options &> /dev/null
+}
+
 export STATE=${STATE:-0}
 case $$,$STATE in
     1,0)
@@ -293,22 +301,25 @@ EOF
 		slattach -p slip -s 9600 /dev/ttyS1 &
 		sleep 1
 		ifconfig sl0 192.168.2.1 pointopoint 192.168.2.2 up
-		#ip addr add 192.168.34.2/24 dev eth1
-		#ip l s down dev eth1
+
+		if is_host; then
+			ip link set down dev eth1
+		fi
                 ;;
             $NUT)
                 ip addr add 192.168.33.3/24 dev eth0
-		#ip addr add 192.168.34.3/24 dev eth1
 		slattach -p slip -s 9600 /dev/ttyS1 &
 		sleep 1
 		ifconfig sl0 192.168.2.2 pointopoint 192.168.2.1 up
-		#ip l s down dev eth1
 
-		# Comment these 3 lines if only testing r2 as a host.
-		# This configuration is used for r2 as router.
-		ip -6 a a 3ffe:501:ffff:100:0200:ccff:fedd:eeff/64 dev eth0
-		ip -6 a a 3ffe:501:ffff:101:0201:ccff:fedd:eeff/64 dev eth1
-		echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
+		# This configuration is used for NUT as router.
+		if is_router;  then
+			ip -6 a a 3ffe:501:ffff:100:0200:ccff:fedd:eeff/64 dev eth0
+			ip -6 a a 3ffe:501:ffff:101:0201:ccff:fedd:eeff/64 dev eth1
+			echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
+		else
+			ip link set down dev eth1
+		fi
                 ;;
         esac
 
@@ -334,6 +345,16 @@ EOF
         setup_tmp
 	
 	setup_bridges
+
+	if [ "$1" == "host" -o "$1" == "router" ]; then
+		echo "$1" > $HOMESHARE/.options
+		TYPE="$1"
+	else
+		echo "router" > $HOMESHARE/.options
+		TYPE="router"
+	fi
+
+	info "Running in $TYPE configuration"
 
 	mkdir -p "$HOMESHARE/bin"
 	
