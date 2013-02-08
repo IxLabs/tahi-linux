@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # This script starts 2 virtual machines and creates the topology
 # and configurations required for running TAHI tests.
@@ -26,6 +26,10 @@ DEPS="screen brctl start-stop-daemon kvm cu socat perl"
 CHROOTDEPS="ip"
 
 HOMESHARE=$PWD/home
+
+# The name of each VM: Tester Node and Network Under Test
+TN="tn"
+NUT="nut"
 
 TAPS=""
 
@@ -68,7 +72,6 @@ check_dependencies() {
 setup_screen() {
     [ x"$TERM" = x"screen" ] || \
         exec screen -ln -S $LABNAME -c /dev/null -t main "$PROGNAME" "$PROGARGS"
-	#exec tmux new-session -s "vm" -n "main" "$PROGNAME $PROGARGS"
     sleep 1
     screen -X caption always "%{= wk}%-w%{= BW}%n %t%{-}%+w %-="
     screen -X zombie cr
@@ -82,6 +85,7 @@ generate_mac() {
 }
 
 # Start a VM
+# $1 - VM name
 start_vm() {
     info "Start VM $1"
     name="$1"
@@ -94,26 +98,24 @@ start_vm() {
 	IFACE=$(tunctl -b)
 	TAPS="$TAPS $IFACE"
 	generate_mac "$name-$net-$IFACE"
-	if [ "$name" == "r2" ]; then
+	if [ "$name" == "$NUT" ]; then
 		mac="00:00:cc:dd:ee:ff"
 	fi
 	netargs="-netdev type=tap,id=guest0,ifname=$IFACE -device virtio-net-pci,netdev=guest0,mac=$mac"
 	ip link set up dev "$IFACE"
 
 	brctl addif br0 "$IFACE"
-	#ip a a 192.168.33.1/24 dev br0
 
 	IFACE=$(tunctl -b)
 	TAPS="$TAPS $IFACE"
 	generate_mac "$name-$net-$IFACE"
-	if [ "$name" == "r2" ]; then
+	if [ "$name" == "$NUT" ]; then
 		mac="00:01:cc:dd:ee:ff"
 	fi
 	netargs="$netargs -netdev type=tap,id=guest1,ifname=$IFACE -device virtio-net-pci,netdev=guest1,mac=$mac"
 	ip link set up dev "$IFACE"
 
 	brctl addif br1 "$IFACE"
-	#ip a a 192.168.34.1/24 dev br1
     done
 
     # /root is mounted with version 9p2000.u to allow access to /dev,
@@ -224,12 +226,10 @@ case $$,$STATE in
                     ;;
             esac
         done
+
 	# Need devpts for remote logins
 	mkdir -p /dev/pts
 	mount -t devpts none /dev/pts
-	# Also, cu utility needs write access
-	mount -t tmpfs none /usr/spool/uucp
-
 	
         info "Setup terminal"
         export STATE=2
@@ -247,39 +247,11 @@ case $$,$STATE in
 #!/bin/sh
 echo b > /proc/sysrq-trigger
 EOF
-        case $uts in
-            r*)
-                ;;
-        esac
-
 	if [ "$POSTINIT" ]; then
 		info "Running postinit: $POSTINIT"
 		"$POSTINIT"
 	fi
-
-	if [ $uts == "r1" ]; then
-		echo 1 > /proc/sys/net/ipv6/conf/eth0/disable_ipv6
-		echo 1 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6
-	fi
-
-	modprobe slip
-	mount -o bind /tmp/home/etc/ /etc
-
-	mount -t debugfs none /sys/kernel/debug
-
-	# Second VM is the tested one
-	if [ $uts == "r2" ]; then
-
-		/etc/rc.d/sshd start
-
-		# Wait for remote login on serial line
-		while true; do
-			#agetty -8 -iL ttyS1 9600 vt102 --nohostname --noclear 
-			break;
-		done
-	fi
-
-
+	
         while true; do
             info "Spawning a shell"
             cd $HOME
@@ -296,9 +268,15 @@ EOF
         info "Enable forwarding"
         sysctl -w net.ipv4.ip_forward=1
 
+	info "Enable SLIP"
+	modprobe slip
+	mount -o bind /tmp/home/etc/ /etc
+
+	mount -t debugfs none /sys/kernel/debug
+
         info "Setup IP addresses"
         case $uts in
-            r1)
+            $TN)
                 ip addr add 192.168.33.2/24 dev eth0
 		slattach -p slip -s 9600 /dev/ttyS1 &
 		sleep 1
@@ -306,7 +284,7 @@ EOF
 		#ip addr add 192.168.34.2/24 dev eth1
 		#ip l s down dev eth1
                 ;;
-            r2)
+            $NUT)
                 ip addr add 192.168.33.3/24 dev eth0
 		#ip addr add 192.168.34.3/24 dev eth1
 		slattach -p slip -s 9600 /dev/ttyS1 &
@@ -321,6 +299,17 @@ EOF
 		echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
                 ;;
         esac
+
+	if [ $uts == "$TN" ]; then
+		info "Disable ipv6 on interfaces"
+		echo 1 > /proc/sys/net/ipv6/conf/eth0/disable_ipv6
+		echo 1 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6
+	fi
+
+	# Second VM is the tested one, start ssh there
+	if [ $uts == "$NUT" ]; then
+		/etc/rc.d/sshd start
+	fi
 
         ;;
     *,*)
@@ -340,12 +329,12 @@ EOF
 	ifconfig br1 up
 
         sleep 0.3
-        NET=1 VLAN=0 POSTINIT="" start_vm r1
-        NET=2 VLAN=0 POSTINIT="" start_vm r2
+        NET=1 VLAN=0 POSTINIT="" start_vm $TN
+        NET=2 VLAN=0 POSTINIT="" start_vm $NUT
 
 	# Create a serial line between the 2 VMs
 	sleep 2
-	socat "$TMP/vm-r1-serial.pipe" "$TMP/vm-r2-serial.pipe" &
+	socat "$TMP/vm-$TN-serial.pipe" "$TMP/vm-$NUT-serial.pipe" &
 
         display_help
         cleanup
