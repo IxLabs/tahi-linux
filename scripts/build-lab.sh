@@ -27,9 +27,13 @@ CHROOTDEPS="ip"
 
 HOMESHARE=$PWD/home
 
-# The name of each VM: Tester Node and Network Under Test
+# The name of each VM: Tester Node and Network Under Test.
 TN="tn"
 NUT="nut"
+
+# Bridge names. 
+BR0="bridge0"
+BR1="bridge1"
 
 TAPS=""
 
@@ -104,7 +108,7 @@ start_vm() {
 	netargs="-netdev type=tap,id=guest0,ifname=$IFACE -device virtio-net-pci,netdev=guest0,mac=$mac"
 	ip link set up dev "$IFACE"
 
-	brctl addif br0 "$IFACE"
+	brctl addif $BR0 "$IFACE"
 
 	IFACE=$(tunctl -b)
 	TAPS="$TAPS $IFACE"
@@ -115,7 +119,7 @@ start_vm() {
 	netargs="$netargs -netdev type=tap,id=guest1,ifname=$IFACE -device virtio-net-pci,netdev=guest1,mac=$mac"
 	ip link set up dev "$IFACE"
 
-	brctl addif br1 "$IFACE"
+	brctl addif $BR1 "$IFACE"
     done
 
     # /root is mounted with version 9p2000.u to allow access to /dev,
@@ -168,6 +172,14 @@ EOF
     read a
 }
 
+setup_bridges() {
+    brctl addbr $BR0
+    brctl addbr $BR1
+
+    ip link set up dev $BR0
+    ip link set up dev $BR1
+}
+
 cleanup() {
     for pid in $TMP/*.pid; do
         kill -15 -$(cat $pid) 2> /dev/null || true
@@ -180,11 +192,11 @@ cleanup() {
 	    tunctl -d "$iface"
     done
 
-    ifconfig br0 down
-    ifconfig br1 down
+    ip link set down dev $BR0
+    ip link set down dev $BR1
 
-    brctl delbr br0
-    brctl delbr br1
+    brctl delbr $BR0
+    brctl delbr $BR1
 
     rm -rf $TMP # sh does not seem to handle "trap EXIT"
     screen -X quit
@@ -320,14 +332,11 @@ EOF
         check_dependencies
         setup_screen
         setup_tmp
+	
+	setup_bridges
 
 	mkdir -p "$HOMESHARE/bin"
-
-	brctl addbr br0
-	brctl addbr br1
-	ifconfig br0 up
-	ifconfig br1 up
-
+	
         sleep 0.3
         NET=1 VLAN=0 POSTINIT="" start_vm $TN
         NET=2 VLAN=0 POSTINIT="" start_vm $NUT
