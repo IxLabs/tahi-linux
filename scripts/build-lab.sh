@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# This script starts 2 virtual machines and creates the topology
+# and configurations required for running TAHI tests.
+# 
+# Based on a script for VXLAN testing by Vincent Bernat
+# https://github.com/vincentbernat/network-lab/tree/master/lab-vxlan
+
+
 # Topology
 #VM1                                   VM2
 #eth0        - tap0  br0          tap2 - eth0
