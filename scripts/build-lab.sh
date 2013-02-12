@@ -25,8 +25,14 @@ WHICH=$(which which)
 DEPS="screen brctl start-stop-daemon kvm cu socat perl"
 CHROOTDEPS="ip"
 
-HOMESHARE=$PWD/home
+# Filesystem hierarchy that will be selectively mounted (rw) in the VM
+VMROOTFS="$PWD/vmrootfs"
+# Root home directory
+HOMESHARE="$VMROOTFS/root"
 
+# Directory with installed kernel and modules
+# It must contain the kernel image with the name $KERNEL_IMAGE_NAME
+# and lib/modules/$kernel_version directory with modules
 KERNEL_DIR="/tmp/install"
 KERNEL_IMAGE_NAME="linux"
 
@@ -154,8 +160,8 @@ start_vm() {
         \
         -fsdev local,security_model=passthrough,id=fsdev-root,path=${ROOT},readonly \
         -device virtio-9p-pci,id=fs-root,fsdev=fsdev-root,mount_tag=/dev/root \
-        -fsdev local,security_model=none,id=fsdev-home,path=${HOMESHARE} \
-        -device virtio-9p-pci,id=fs-home,fsdev=fsdev-home,mount_tag=homeshare \
+        -fsdev local,security_model=none,id=fsdev-home,path=${VMROOTFS} \
+        -device virtio-9p-pci,id=fs-home,fsdev=fsdev-home,mount_tag=overlayshare \
         -fsdev local,security_model=none,id=fsdev-lab,path=${KERNEL_DIR} \
         -device virtio-9p-pci,id=fs-lab,fsdev=fsdev-lab,mount_tag=kernelshare \
         \
@@ -238,7 +244,7 @@ case $$,$STATE in
         hostname ${uts}
         info "Set path"
         export TERM=screen
-        export HOME=/tmp/home
+        export HOME=/root
         export PATH=/usr/local/bin:/usr/bin:/bin:/sbin:/usr/local/sbin:/usr/sbin:$HOME/bin
 
         info "Setup overlayfs"
@@ -246,9 +252,14 @@ case $$,$STATE in
         mount -n -t proc  proc /proc
         mount -n -t sysfs sys /sys
 
+	mkdir /tmp/vmroot
+        mount -t 9p overlayshare /tmp/vmroot -o trans=virtio,version=9p2000.L,access=0,rw
+
         info "Mount home directory on /root"
-	mkdir /tmp/home/
-        mount -t 9p homeshare /tmp/home -o trans=virtio,version=9p2000.L,access=0,rw
+	mount -o bind /tmp/vmroot/root /root
+
+	info "Mount /etc"
+	mount -o bind /tmp/vmroot/etc/ /etc
 
 	info "Mount kernel modules"
 	mkdir /tmp/kernel
@@ -315,7 +326,6 @@ EOF
 
 	info "Enable SLIP"
 	modprobe slip
-	mount -o bind /tmp/home/etc/ /etc
 
 	mount -t debugfs none /sys/kernel/debug
 
