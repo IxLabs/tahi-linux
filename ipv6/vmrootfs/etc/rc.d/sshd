@@ -1,0 +1,38 @@
+#!/bin/bash
+
+PIDFILE=/run/sshd.pid
+PID=$(cat $PIDFILE 2>/dev/null)
+if ! readlink -q /proc/$PID/exe | grep -q '^/usr/sbin/sshd'; then
+	PID=
+	rm $PIDFILE 2>/dev/null
+fi
+
+case "$1" in
+	start)
+		echo 'Starting Secure Shell Daemon'
+		/usr/bin/ssh-keygen -A
+		[[ -z $PID ]] && /usr/sbin/sshd $SSHD_ARGS
+		if [[ $? -gt 0 ]]; then
+			exit 1
+		else
+			exit 0
+		fi
+		;;
+	stop)
+		echo 'Stopping Secure Shell Daemon'
+		[[ ! -z $PID ]] && kill $PID &> /dev/null
+		if [[ $? -gt 0 ]]; then
+			exit 1
+		else
+			exit 0
+		fi
+		;;
+	restart)
+		$0 stop
+		sleep 1
+		$0 start
+		;;
+	*)
+		echo "usage: $0 {start|stop|restart}"
+esac
+exit 0
