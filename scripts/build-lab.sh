@@ -228,14 +228,6 @@ cleanup() {
     screen -X quit
 }
 
-is_host() {
-    grep "host" $HOME/.options &> /dev/null
-}
-
-is_router() {
-    grep "router" $HOME/.options &> /dev/null
-}
-
 export STATE=${STATE:-0}
 case $$,$STATE in
     1,0)
@@ -296,13 +288,9 @@ case $$,$STATE in
 
         info "Lab specific setup"
         export STATE=3
+	. "/etc/rc.local"
         . "$PROGNAME"
-
-        info "Setup additional commands"
-        cat <<EOF > ~/bin/reboot
-#!/bin/sh
-echo b > /proc/sysrq-trigger
-EOF
+	
 	if [ "$POSTINIT" ]; then
 		info "Running postinit: $POSTINIT"
 		"$POSTINIT"
@@ -328,47 +316,6 @@ EOF
 	modprobe slip
 
 	mount -t debugfs none /sys/kernel/debug
-
-        info "Setup IP addresses"
-        case $uts in
-            $TN)
-                ip addr add 192.168.33.2/24 dev eth0
-		slattach -p slip -s 9600 /dev/ttyS1 &
-		sleep 1
-		ifconfig sl0 192.168.2.1 pointopoint 192.168.2.2 up
-
-		if is_host; then
-			ip link set down dev eth1
-		fi
-                ;;
-            $NUT)
-                ip addr add 192.168.33.3/24 dev eth0
-		slattach -p slip -s 9600 /dev/ttyS1 &
-		sleep 1
-		ifconfig sl0 192.168.2.2 pointopoint 192.168.2.1 up
-
-		# This configuration is used for NUT as router.
-		if is_router;  then
-			ip -6 a a 3ffe:501:ffff:100:0200:ccff:fedd:eeff/64 dev eth0
-			ip -6 a a 3ffe:501:ffff:101:0201:ccff:fedd:eeff/64 dev eth1
-			echo 1 > /proc/sys/net/ipv6/conf/all/forwarding
-		else
-			ip link set down dev eth1
-		fi
-                ;;
-        esac
-
-	if [ $uts == "$TN" ]; then
-		info "Disable ipv6 on interfaces"
-		echo 1 > /proc/sys/net/ipv6/conf/eth0/disable_ipv6
-		echo 1 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6
-	fi
-
-	# Second VM is the tested one, start ssh there
-	if [ $uts == "$NUT" ]; then
-		/etc/rc.d/sshd start
-	fi
-
         ;;
     *,*)
         [ $(id -u) != 0 ] || {
@@ -380,16 +327,6 @@ EOF
         setup_tmp
 	
 	setup_bridges
-
-	if [ "$1" == "host" -o "$1" == "router" ]; then
-		echo "$1" > $HOMESHARE/.options
-		TYPE="$1"
-	else
-		echo "router" > $HOMESHARE/.options
-		TYPE="router"
-	fi
-
-	info "Running in $TYPE configuration"
 
 	mkdir -p "$HOMESHARE/bin"
 	
