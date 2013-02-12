@@ -27,6 +27,9 @@ CHROOTDEPS="ip"
 
 HOMESHARE=$PWD/home
 
+KERNEL_DIR="/tmp/install"
+KERNEL_IMAGE_NAME="linux"
+
 # The name of each VM: Tester Node and Network Under Test.
 TN="tn"
 NUT="nut"
@@ -95,6 +98,15 @@ start_vm() {
     name="$1"
     shift
 
+    case "$name" in
+	"$TN")
+	    POSTINIT="$TN_POSTINIT"
+	    ;;
+        "$NUT")
+	    POSTINIT="$NUT_POSTINIT"
+	    ;;
+    esac
+
     netargs=""
     # Add 2 tap devices to the VM
     # The second one can be used to test routing functionalities.
@@ -144,11 +156,11 @@ start_vm() {
         -device virtio-9p-pci,id=fs-root,fsdev=fsdev-root,mount_tag=/dev/root \
         -fsdev local,security_model=none,id=fsdev-home,path=${HOMESHARE} \
         -device virtio-9p-pci,id=fs-home,fsdev=fsdev-home,mount_tag=homeshare \
-        -fsdev local,security_model=none,id=fsdev-lab,path=$(dirname "$PROGNAME") \
-        -device virtio-9p-pci,id=fs-lab,fsdev=fsdev-lab,mount_tag=labshare \
+        -fsdev local,security_model=none,id=fsdev-lab,path=${KERNEL_DIR} \
+        -device virtio-9p-pci,id=fs-lab,fsdev=fsdev-lab,mount_tag=kernelshare \
         \
         -gdb unix:$TMP/vm-$name-gdb.pipe,server,nowait \
-        -kernel $LINUX \
+        -kernel "${KERNEL_DIR}/${KERNEL_IMAGE_NAME}" \
         -append "init=$PROGNAME console=ttyS0 uts=$name root=/dev/root rootflags=trans=virtio,version=9p2000.u ro rootfstype=9p POSTINIT=\"$POSTINIT\"" \
         $netargs \
         "$@"
@@ -169,7 +181,13 @@ Some screen commands :
  C-a C-a   - Previous window
 EOF
     echo "Press enter to exit the lab"
-    read a
+
+    # This is used for signaling from inside the VM
+    if [ -n "$WAIT" ]; then
+	    nc -l -p 9882
+    else
+	    read a
+    fi
 }
 
 setup_bridges() {
@@ -178,6 +196,8 @@ setup_bridges() {
 
     ip link set up dev $BR0
     ip link set up dev $BR1
+
+    ip a a 192.168.33.1/24 dev "$BR0"
 }
 
 cleanup() {
@@ -229,6 +249,11 @@ case $$,$STATE in
         info "Mount home directory on /root"
 	mkdir /tmp/home/
         mount -t 9p homeshare /tmp/home -o trans=virtio,version=9p2000.L,access=0,rw
+
+	info "Mount kernel modules"
+	mkdir /tmp/kernel
+	mount -t 9p kernelshare /tmp/kernel -o trans=virtio,version=9p2000.L,access=0,rw
+	mount -o bind /tmp/kernel/lib/modules /lib/modules
 
         # In chroot
         info "Clean out /tmp and /run directories"
@@ -359,8 +384,8 @@ EOF
 	mkdir -p "$HOMESHARE/bin"
 	
         sleep 0.3
-        NET=1 VLAN=0 POSTINIT="" start_vm $TN
-        NET=2 VLAN=0 POSTINIT="" start_vm $NUT
+        NET=1 VLAN=0 start_vm $TN
+        NET=2 VLAN=0 start_vm $NUT
 
 	# Create a serial line between the 2 VMs
 	sleep 2
