@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Download, configure and build a kernel
+# $1 - optional, kernel version ("3.7.2", "3.8",...)
+#      if not specified, uses a git tree  (net-next by default)
+
 INSTALL_DIR="/tmp/install"
 WORK_DIR="/tmp"
 LOG_DIR="/tmp/logs"
