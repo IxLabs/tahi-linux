@@ -5,7 +5,5 @@ slattach -p slip -s 9600 /dev/ttyS1 &
 sleep 1
 ifconfig sl0 192.168.2.2 pointopoint 192.168.2.1 up
 
-ip link set down dev eth1
-
 /etc/rc.d/sshd start
 
