@@ -1,7 +1,23 @@
 #!/bin/bash
 
+# This script builds a kernel and starts a virtual testing environment
+# where the TAHI Self Tests are run with p2_router.
+
+# Path were the self tests are
+SELF_TEST_PATH=$PWD/Self_Test_5-0-0
+
+# Uncomment to build a certain kernel version
 #./make-kernel "3.7.7"
+
+# Download and build net-next from git
+# See make-kernel for more details
 ./make-kernel
-cp -r Self_Test_5-0-0 vmrootfs/root/
+
+cp -r "$SELF_TEST_PATH" vmrootfs/root/Self_Test_5-0-0
+
+# WAIT=y -> the virtual machines shut down after the tests are done
+# $TN_POSTINIT is ran in the Tester Node
+# $NUT_POSTINIT is ran in the Node Under Test
+
 WAIT="y" TN_POSTINIT="/etc/tests/ct-router-tn" NUT_POSTINIT="/etc/tests/ct-router-nut" ./v6eval-env
 

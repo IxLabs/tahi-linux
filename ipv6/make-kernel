@@ -4,8 +4,13 @@
 # $1 - optional, kernel version ("3.7.2", "3.8",...)
 #      if not specified, uses a git tree  (net-next by default)
 
+# This is were the modules and kernel will be installed
+# Must be the same as $KERNEL_DIR in v6eval-env
 INSTALL_DIR="/tmp/install"
+
+# Here is where the kernel will be downloaded and built
 WORK_DIR="/tmp"
+
 LOG_DIR="/tmp/logs"
 
 GIT_NET_NEXT="git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git"
