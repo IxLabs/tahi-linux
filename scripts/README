@@ -1,0 +1,88 @@
+		v6eval-env
+
+
+	Prerequisites
+
+	* screen, start-stop-daemon, kvm
+	* socat
+	* BSD pmake (included in vmrootfs/bin)
+	* v6eval installation
+	* TAHI conformance tests(ct): SelfTest
+	* ssh
+
+This script creates a virtual environment for testing the IPv6 stack of the
+Linux kernel using v6eval from the TAHI project[1]. The consoles from the
+virtual machines are displayed in a "screen" session.
+
+Two virtual machines are created and connected according to this topology:
+
+        192.168.33.1
+    tap0----br0----tap2
+     |              |
+     |              |   
+    eth0           eth0
+    VM1            VM2
+    eth1           eth1
+     |              |
+     |              |
+    tap1----br1----tap3
+       192.168.34.1
+
+
+There is also a serial link between the machines used for remote management.
+Initially, v6eval used plain remote logins over the serial line, but I
+couldn't make it work so I changed the remote implementation to work over ssh.
+Over the serial link the VMs run SLIP with IPs 192.168.2.{1,2}. 
+The account used on VM2 is root:root.
+
+
+In the v6eval topology, VM1 is TN (Tester Node) and VM2 is the NUT (Node Under Test).
+
+
+	Getting v6eval to build on Linux
+
+* Get v6eval-3.3.2.tar.gz from [1] and extract
+* Get patch from [2]
+* Install pmake (BSD make). Included in vmrootfs/root/bin
+* pmake && pmake install
+* Files will be installed in /usr/local/v6eval
+* Copy v6eval-configs/*.def to /usr/local/v6eval/etc
+  Use tn-router.def and nut-router.def for testing VM2
+  as a router. Rename them to tn.def and nut.def.
+
+* Install patched v6eval-remotes
+  # cd v6eval-remotes-3.0
+  # pmake && pmake install
+
+* Get the self test suite from [3]
+* Extract the tests in the "scripts" directory
+
+* Run the tests in VM1:
+    # cd Self_Test_5-0-0/
+    # pmake ipv6ready_p1_host     #Phase 1 host tests
+    # pmake ipv6ready_p2_host     #Phase 2 host test
+
+    If you need to test the routing functionality, use:
+    # pmake ipv6ready_p1_router
+    # pmake ipv6ready_p2_router
+
+* Or, one test at a time, manually:
+    # cd Self_Test_5-0-0/nd.p2
+    # ./V6LC_2_1_1_A.seq -pkt V6LC_2_1_1_A.def
+
+
+	Run tests automatically
+
+The scripts "make-kernel" and "run-tests" are able to download the kernel source
+either from git or from a tarball, configure and build it, then start the virtual machines
+and run the IPv6 self tests.
+
+To run the tests automatically:
+# ./run-tests
+
+All the output from downloading and building the kernel is logged to files. See "make-kernel".
+
+
+  [1] - www.tahi.org
+  [2] - http://wundermar].blogspot.ro/2012/02/linux-patches-for-tahi-v6eval-332.html
+  [3] - http://www.tahi.org/logo/release/Self_Test_5-0-0.tgz
