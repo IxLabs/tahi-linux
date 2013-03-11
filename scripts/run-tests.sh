@@ -7,11 +7,11 @@
 SELF_TEST_PATH=$PWD/Self_Test_5-0-0
 
 # Uncomment to build a certain kernel version
-#./make-kernel "3.7.7"
+#./make-kernel.sh "3.7.7"
 
 # Download and build net-next from git
 # See make-kernel for more details
-./make-kernel
+./make-kernel.sh
 
 cp -r "$SELF_TEST_PATH" vmrootfs/root/Self_Test_5-0-0
 
