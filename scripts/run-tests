@@ -19,5 +19,5 @@ cp -r "$SELF_TEST_PATH" vmrootfs/root/Self_Test_5-0-0
 # $TN_POSTINIT is ran in the Tester Node
 # $NUT_POSTINIT is ran in the Node Under Test
 
-WAIT="y" TN_POSTINIT="/etc/tests/ct-router-tn" NUT_POSTINIT="/etc/tests/ct-router-nut" ./v6eval-env
+WAIT="y" TN_POSTINIT="/etc/tests/ct-router-tn" NUT_POSTINIT="/etc/tests/ct-router-nut" ./build-lab.sh
 
