@@ -103,7 +103,7 @@ BEGIN
 
     $Bye="~.";
     $Type="tahi-v6eval";
-    $CU="cu";
+    $CU="ssh";
     $Device="cuaa0";
     $User="root";
     $Password="v6eval";
@@ -163,7 +163,7 @@ BEGIN
 			'nec-ix1k',		'Password:',
 			'sfc-mip6',		'Password:',
 			'yamaha-ws-one',	'Password:',
-			'linux-v6',		'Password: ',
+			'linux-v6',		'[pP]assword: ',
 			'sun-solaris',		'Password:',
 			'ms-win2k',		'Password:',
 			'cisco-ios',		'Password:',
@@ -573,8 +573,8 @@ sub rOpen()
     $debug = 1 if defined($opt_V);		# debug flag
     $SendSpeed=$opt_s if defined($opt_s);	# send speed
     $EnableLogout=$opt_l if defined($opt_l);	# enable logout
-
-    my $TermCmd = "$CU -l $Device";
+    $debug = 1;
+    my $TermCmd = "$CU -l $User $Device";
     $Remote = Expect->spawn("$TermCmd");
 #   if($Remote == undef) {
     if(!defined $Remote) {
@@ -596,10 +596,10 @@ sub rOpen()
     }
 
 #   if($Remote->expect(4, "onnect") == undef) {
-    if(!defined $Remote->expect(4, "onnect")) {
-	print STDERR "Unable to sync with cu\n";
-	return undef;
-    }
+#    if(!defined $Remote->expect(4, "onnect")) {
+#	print STDERR "Unable to sync with cu\n";
+#	return undef;
+#    }
     $Remote;
 }
 
@@ -665,7 +665,7 @@ sub rLogin($)
     my($timeout)=@_;
     my($retry)=8;
     my($i)=0;
-    my($t)=$init_timeout;
+    my($t)=$init_timeout + 8;
     my($is_admin)=0;
     my($is_admin2)=0;
 
@@ -694,25 +694,25 @@ sub rLogin($)
 #				'-re', "$prompt_command{$Type}"
 #				) == undef;
 	next if (!defined $Remote->expect($t,
-				'-re', "$prompt_user{$Type}",
+			#'-re', "$prompt_user{$Type}",
 				'-re', "$prompt_password{$Type}",
 				'-re', "$prompt_command{$Type}"
 					  ));
 	$t=$timeout;
 	my($num)=$Remote->exp_match_number();
 	if($num == 1) {
-	    #
-	    # got login prompt
-	    #
-	    print STDERR "rLogin: Got login prompt\n" if $debug;
-	    sendMessages("$User\r"); # put user name
-	} elsif($num == 2) {
+#	    #
+#	    # got login prompt
+#	    #
+#	    print STDERR "rLogin: Got login prompt\n" if $debug;
+#	    sendMessages("$User\r"); # put user name
+#	} elsif($num == 2) {
 	    #
 	    # got password prompt
 	    #
-	    print STDERR "rLogin: Got password prompt\n" if $debug;
+	    print STDERR "rLogin: Got password prompt1\n" if $debug;
 	    goto password;
-	} elsif($num == 3) {
+	} elsif($num == 2) {
 	    #
 	    # got command prompt
 	    #
@@ -743,8 +743,8 @@ sub rLogin($)
 	}
       password:
 	if($prompt_password{$Type} ne $dummy_prompt) {
-	    print STDERR "rLogin: Got password prompt\n" if $debug;
 	    sendMessages("$Password\r"); # put password
+	    print STDERR "rLogin: Sent password\n";
 	}
 
 	#
@@ -776,7 +776,6 @@ sub rLogin($)
 	#
 	if($is_admin2 == 0 && $cmd_admin2{$Type}) {
 	    $is_admin2 = 1;
-	    print STDERR "rLogin: Need admin command2\n" if $debug;
 	    sendMessages("$cmd_admin2{$Type}\r");
 	    redo;
 	}
@@ -1035,6 +1034,8 @@ sub rRebootAsync($)
     my($timeout)=@_;
     my($i);
 
+    rRebootSSH($timeout, 0);
+
     if(0) {
 	if(!$prompt_command{$Type}) {
 	    print STDERR "$Type: Not defining the patterns of the prompts\n";
@@ -1072,7 +1073,7 @@ sub rRebootAsync($)
 	print STDERR "rRebootAsync: Do ``$cmd'' command\n" if $debug;
 	sendMessagesSync("$cmd\r");
     }
-    my($cmd)=$cmd_reboot{$Type};
+    my($cmd)="$cmd_reboot{$Type} \&";
     return 0 if rCommandAsync($cmd, $timeout) == 0;
 
     my(@ptn)=();
@@ -1112,6 +1113,76 @@ sub rRebootAsync($)
     return 1;
 }
 
+sub rRebootSSH
+{
+	my $timeout = $_[0];
+	my $sync = $_[1];
+
+	getopts('t:T:d:u:p:v:i:o:U:P:C:Vs:l:h');
+
+	if($opt_h) {
+		usage();
+		exit 0;
+	}
+
+	$Type=$opt_t if defined($opt_t);	# target type
+	$CU=$opt_T if defined($opt_T);	# cu command path
+	$Device=$opt_d if defined($opt_d);	# serial device name
+	$User=$opt_u if defined($opt_u);	# user name
+	$Password=$opt_p if defined($opt_p);	# password
+
+	rClose() if defined($Remote);
+	my $TermCmd = "$CU -l $User $Device";
+	print "my cmd is $TermCmd, passwd is $Password, timeout is $timeout\n";
+
+	my $Remote = new Expect;
+	$Remote->debug($opt_v) if defined($opt_v); # debug level
+	$Remote->exp_internal($opt_i) if defined($opt_i);  # internal debug level
+	$Remote->log_stdout($opt_o) if defined($opt_o);    # stdout
+
+	$Remote->spawn("$TermCmd") || die "Connect failed\n";
+	$Remote->expect(5, [
+			qr/password:/,
+			sub {
+				my $exp = shift;
+				$exp->send("$Password\n");
+			},
+		],
+	);
+
+	$Remote->send("\n") if ($Remote->expect(undef,'#'));
+	$Remote->send("/root/bin/timereboot &\n") if ($Remote->expect(undef,'#'));
+	$Remote->send("\n") if ($Remote->expect(undef,'#'));
+	$Remote->send("exit\n") if ($Remote->expect(undef,'#'));
+	$Remote->soft_close();
+	undef $Remote;
+
+	if ($sync) {
+		sleep $timeout;
+
+		my $Remote = new Expect;
+		$Remote->debug($opt_v) if defined($opt_v); # debug level
+		$Remote->exp_internal($opt_i) if defined($opt_i);  # internal debug level
+		$Remote->log_stdout($opt_o) if defined($opt_o);    # stdout
+
+		$Remote->spawn("$TermCmd") || die "Connect failed\n";
+		$Remote->expect(5, [
+				qr/password:/,
+				sub {
+					my $exp = shift;
+					$exp->send("$Password\n");
+				},
+			],
+		);
+
+		$Remote->send("\n") if ($Remote->expect(undef,'#'));
+		$Remote->send("date\n") if ($Remote->expect(undef,'#'));
+		$Remote->send("\n") if ($Remote->expect(undef,'#'));
+		$Remote->send("exit\n") if ($Remote->expect(undef,'#'));
+	}
+	return 1;
+}
+
 ########################################################################
 sub rReboot($)
 {
@@ -1130,26 +1201,10 @@ sub rReboot($)
     #
     # Do reboot command
     #
-    rRebootAsync(5) || return 0;
+    #rRebootAsync(5) || return 0;
+    rRebootSSH(5, 1) || return 0;
 
-    #
-    # The login again.
-    #
-    for($i=0, $t=$init_timeout; $i<$retry; $i++) {
-	print STDERR "rReboot: Try to get login prompt ($t sec)\n"
-	    if $debug;
-#	return 1 if $Remote->expect($t,
-#				    '-re', "$prompt_user{$Type}",
-#				    ) != undef;
-	return 1 if (defined $Remote->expect($t,
-				    '-re', "$prompt_user{$Type}",
-					     ));
-	sendMessages("\r");
-	$t = $timeout;
-    }
-    print STDERR "rReboot: never got login prompt\n";
-    print STDERR getOutput();
-    return 0;
+    return 1;
 }
 
 ########################################################################
@@ -1206,13 +1261,16 @@ sub getOutput()
 sub sendMessages(@)
 {
     my(@strings)=@_;
-
     foreach(@strings) {
-	if($SendSpeed == 0){
-	    print $Remote $_;
-	} else {
-	    $Remote-> send_slow($SendSpeed, $_);
-	}
+	    $Remote->send("$_");
+	    
+#	if($SendSpeed == 0){
+#	    print $Remote $_;
+#	    print "Send direct";
+#	} else {
+#	    $Remote-> send_slow($SendSpeed, $_);
+#	    print "Send slow";
+#	}
     }
 }
 
@@ -1223,11 +1281,12 @@ sub sendMessagesSync(@)
     my($timeout)=5;
 
     foreach(@strings) {
-	if($SendSpeed == 0){
-	    print $Remote $_;
-	} else {
-	    $Remote-> send_slow($SendSpeed, $_);
-	}
+	$Remote->send("$_");	    
+#	if($SendSpeed == 0){
+#	    print $Remote $_;
+#	} else {
+#	    $Remote-> send_slow($SendSpeed, $_);
+#	}
 
 	# Sync with command echo back
 	# It is important if a target is WIN2K
