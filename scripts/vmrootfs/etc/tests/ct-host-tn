@@ -7,3 +7,5 @@ cd $HOME/Self_Test_5-0-0
 pmake clean
 pmake ipv6ready_p2_host
 
+endvm
+
