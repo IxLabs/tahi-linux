@@ -42,7 +42,10 @@ In the v6eval topology, VM1 is TN (Tester Node) and VM2 is the NUT (Node Under T
 	Getting v6eval to build on Linux
 
 * Get v6eval-3.3.2.tar.gz from [1] and extract
-* Get patch from [2]
+* Get patch from[2]
+  or
+* Clone this repo [3] which already has the patch applied.
+
 * Install pmake (BSD make). Included in vmrootfs/root/bin
   # cd v6eval-3.3.2
   # ./build.sh
@@ -56,7 +59,7 @@ In the v6eval topology, VM1 is TN (Tester Node) and VM2 is the NUT (Node Under T
   # cd v6eval-remotes-3.0
   # pmake && pmake install
 
-* Get the self test suite from [3]
+* Get the self test suite from [4]
 * Extract the tests in the "scripts" directory
 
 
@@ -90,4 +93,5 @@ All the output from downloading and building the kernel is logged to files. See 
 
   [1] - www.tahi.org
   [2] - http://wundermar].blogspot.ro/2012/02/linux-patches-for-tahi-v6eval-332.html
-  [3] - http://www.tahi.org/logo/release/Self_Test_5-0-0.tgz
+  [3] - https://github.com/IxLabs/tahi-linux/tree/master/v6eval
+  [4] - http://www.tahi.org/logo/release/Self_Test_5-0-0.tgz
