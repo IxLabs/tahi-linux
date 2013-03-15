@@ -31,7 +31,7 @@ Two virtual machines are created and connected according to this topology:
 
 There is also a serial link between the machines used for remote management.
 Initially, v6eval used plain remote logins over the serial line, but I
-couldn't make it work so I changed the remote implementation to work over ssh.
+couldn't make it work reliably so I changed the remote implementation to work over ssh.
 Over the serial link the VMs run SLIP with IPs 192.168.2.{1,2}. 
 The account used on VM2 is root:root.
 
@@ -44,7 +44,9 @@ In the v6eval topology, VM1 is TN (Tester Node) and VM2 is the NUT (Node Under T
 * Get v6eval-3.3.2.tar.gz from [1] and extract
 * Get patch from [2]
 * Install pmake (BSD make). Included in vmrootfs/root/bin
-* pmake && pmake install
+  # cd v6eval-3.3.2
+  # ./build.sh
+  # pmake install
 * Files will be installed in /usr/local/v6eval
 * Copy v6eval-configs/*.def to /usr/local/v6eval/etc
   Use tn-router.def and nut-router.def for testing VM2
@@ -57,10 +59,13 @@ In the v6eval topology, VM1 is TN (Tester Node) and VM2 is the NUT (Node Under T
 * Get the self test suite from [3]
 * Extract the tests in the "scripts" directory
 
+
+	Run the tests manually
+
 * Run the tests in VM1:
     # cd Self_Test_5-0-0/
     # pmake ipv6ready_p1_host     #Phase 1 host tests
-    # pmake ipv6ready_p2_host     #Phase 2 host test
+    # pmake ipv6ready_p2_host     #Phase 2 host tests
 
     If you need to test the routing functionality, use:
     # pmake ipv6ready_p1_router
