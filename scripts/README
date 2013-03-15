@@ -12,7 +12,10 @@
 
 This script creates a virtual environment for testing the IPv6 stack of the
 Linux kernel using v6eval from the TAHI project[1]. The consoles from the
-virtual machines are displayed in a "screen" session.
+virtual machines are displayed in a "screen" session. The host's filesystem
+is mounted in the VM's, so almost everything from the host will be accesible.
+Certain directories from vmrootfs/ will be mounted over the ones from the
+host.
 
 Two virtual machines are created and connected according to this topology:
 
@@ -55,15 +58,19 @@ In the v6eval topology, VM1 is TN (Tester Node) and VM2 is the NUT (Node Under T
   Use tn-router.def and nut-router.def for testing VM2
   as a router. Rename them to tn.def and nut.def.
 
-* Install patched v6eval-remotes
-  # cd v6eval-remotes-3.0
-  # pmake && pmake install
+* Install patched v6eval-remotes from this repo[4].
+  That is patched to use SSH over the serial link. 
+    # cd v6eval-remotes-3.0
+    # pmake && pmake install
 
-* Get the self test suite from [4]
+* Get the self test suite from [5]
 * Extract the tests in the "scripts" directory
 
 
 	Run the tests manually
+
+* Start the VMs manually:
+    # ./build-lab.sh 
 
 * Run the tests in VM1:
     # cd Self_Test_5-0-0/
@@ -89,9 +96,11 @@ To run the tests automatically:
 # ./run-tests
 
 All the output from downloading and building the kernel is logged to files. See "make-kernel".
-
+After the build, "screen" will show 2 windows for each VM and the tests will
+begin. 
 
   [1] - www.tahi.org
   [2] - http://wundermar].blogspot.ro/2012/02/linux-patches-for-tahi-v6eval-332.html
   [3] - https://github.com/IxLabs/tahi-linux/tree/master/v6eval
-  [4] - http://www.tahi.org/logo/release/Self_Test_5-0-0.tgz
+  [4] - https://github.com/IxLabs/tahi-linux/tree/master/v6eval-remotes
+  [5] - http://www.tahi.org/logo/release/Self_Test_5-0-0.tgz
